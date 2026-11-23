@@ -1,5 +1,4 @@
-
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Map,
@@ -16,6 +15,8 @@ import {
   ShieldCheck,
   UserCircle,
 } from "lucide-react";
+
+import { useAuth } from "../contexts/AuthContext";
 import "./layouts.css";
 
 export const adminMenus = [
@@ -72,13 +73,34 @@ export const adminMenus = [
 ];
 
 export default function AdminLayout() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const namaPengguna = user?.nama_lengkap || "Administrator";
+
+  const inisial =
+    namaPengguna
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((kata) => kata.charAt(0))
+      .join("")
+      .toUpperCase() || "A";
+
   return (
     <div className="dashboard-layout">
+      {/* SIDEBAR */}
       <aside className="dashboard-sidebar">
         <div className="dashboard-sidebar-brand">
           <div className="dashboard-brand-icon">
             <ShieldCheck size={23} />
           </div>
+
           <div>
             <strong>Monitoring PSN</strong>
             <span>Admin Kelurahan</span>
@@ -107,20 +129,31 @@ export default function AdminLayout() {
           })}
         </nav>
 
+        {/* LOGOUT */}
         <div className="sidebar-bottom">
-          <NavLink to="/login" className="dashboard-menu-link logout-link">
+          <button
+            type="button"
+            className="dashboard-menu-link logout-link"
+            onClick={handleLogout}
+          >
             <LogOut size={19} />
             <span>Keluar</span>
-          </NavLink>
+          </button>
         </div>
       </aside>
 
+      {/* KONTEN UTAMA */}
       <div className="dashboard-main">
         <header className="dashboard-topbar">
           <div className="topbar-left">
-            <button className="mobile-menu-button" aria-label="Buka menu">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              aria-label="Buka menu"
+            >
               <Menu size={21} />
             </button>
+
             <div>
               <strong>Panel Admin</strong>
               <span>Kelurahan Srengseng Sawah</span>
@@ -128,13 +161,19 @@ export default function AdminLayout() {
           </div>
 
           <div className="topbar-right">
-            <button className="topbar-icon-button" aria-label="Notifikasi">
+            <button
+              type="button"
+              className="topbar-icon-button"
+              aria-label="Notifikasi"
+            >
               <Bell size={19} />
             </button>
+
             <div className="topbar-user">
-              <div className="user-avatar">A</div>
+              <div className="user-avatar">{inisial}</div>
+
               <div>
-                <strong>Administrator</strong>
+                <strong>{namaPengguna}</strong>
                 <span>Admin Kelurahan</span>
               </div>
             </div>

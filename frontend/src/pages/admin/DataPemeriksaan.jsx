@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   RefreshCw,
   FileSpreadsheet,
@@ -7,13 +9,18 @@ import {
   X,
 } from "lucide-react";
 
+import { apiRequest } from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+
 import "../../assets/styles/DataPemeriksaan.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// =======================================================
+// KONFIGURASI KOLOM GOOGLE SHEETS
+// =======================================================
 
 const COLUMNS = [
   "Timestamp",
-  "Nama Koordinator Jumantik",
+  "Nama Kader Jumantik",
   "Nomor HP",
   "Tanggal Pelaksanaan PSN",
   "Wilayah RW",
@@ -41,102 +48,105 @@ const COLUMNS = [
   "Kendala di Lapangan",
 ];
 
-// Index kolom berdasarkan urutan Google Sheets.
 const DOKUMENTASI_INDEX = 25;
 const KENDALA_INDEX = 26;
 
+// =======================================================
+// KOMPONEN DATA PEMERIKSAAN
+// =======================================================
+
 function DataPemeriksaan() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [laporan, setLaporan] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
   const [kendalaTerpilih, setKendalaTerpilih] = useState(null);
 
-  const token = localStorage.getItem("token");
+  // =======================================================
+  // PENANGANAN SESI KEDALUWARSA
+  // =======================================================
+
+  const handleUnauthorized = useCallback(() => {
+    logout();
+    navigate("/login", { replace: true });
+  }, [logout, navigate]);
+
+  // =======================================================
+  // MENGAMBIL DATA LAPORAN PEMERIKSAAN
+  // =======================================================
 
   const fetchLaporan = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const response = await fetch(`${API_URL}/api/laporan-psn`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const result = await response.json();
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Gagal mengambil data pemeriksaan.");
-      }
+      const result = await apiRequest("/api/laporan-psn");
 
       setLaporan(Array.isArray(result.data) ? result.data : []);
     } catch (err) {
-      setError(err.message || "Terjadi kesalahan.");
+      if (err.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
+      setError(err.message || "Gagal mengambil data pemeriksaan.");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [handleUnauthorized]);
 
+  // Memuat data ketika halaman pertama kali dibuka.
   useEffect(() => {
     fetchLaporan();
   }, [fetchLaporan]);
 
-  async function handleSync() {
+  // =======================================================
+  // SINKRONISASI GOOGLE SHEETS
+  // =======================================================
+
+  const handleSync = async () => {
     try {
       setSyncing(true);
       setError("");
       setNotice("");
 
-      const response = await fetch(`${API_URL}/api/laporan-psn/sync`, {
+      const result = await apiRequest("/api/laporan-psn/sync", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
       });
-
-      const result = await response.json();
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        window.location.href = "/login";
-        return;
-      }
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Sinkronisasi gagal.");
-      }
 
       const data = result.data || {};
 
       setNotice(
-        `${result.message} Total dibaca: ${data.total_dibaca ?? 0}, berhasil disimpan: ${data.berhasil_disimpan ?? 0}, dilewati: ${data.dilewati ?? 0}.`,
+        `${result.message} Total dibaca: ${
+          data.total_dibaca ?? 0
+        }, berhasil disimpan: ${
+          data.berhasil_disimpan ?? 0
+        }, dilewati: ${data.dilewati ?? 0}.`,
       );
 
+      // Memuat ulang tabel setelah sinkronisasi berhasil.
       await fetchLaporan();
     } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       setError(err.message || "Gagal menghubungkan Google Sheets.");
     } finally {
       setSyncing(false);
     }
-  }
+  };
+
+  // =======================================================
+  // MENGAMBIL NILAI SEL BERDASARKAN INDEX
+  // =======================================================
 
   function getCellValue(item, index) {
     const value = item.raw_data?.[index]?.value;
@@ -148,7 +158,10 @@ function DataPemeriksaan() {
     return value;
   }
 
-  // Membuka link dokumentasi Google Drive.
+  // =======================================================
+  // MENAMPILKAN DOKUMENTASI GOOGLE DRIVE
+  // =======================================================
+
   function renderDokumentasi(item) {
     const url = getCellValue(item, DOKUMENTASI_INDEX);
 
@@ -169,7 +182,7 @@ function DataPemeriksaan() {
       <div className="dokumentasi-cell">
         {links.map((link, index) => (
           <a
-            key={index}
+            key={`${item.id ?? "laporan"}-${link}-${index}`}
             href={link}
             target="_blank"
             rel="noopener noreferrer"
@@ -177,6 +190,7 @@ function DataPemeriksaan() {
             title="Buka dokumentasi Google Drive"
           >
             <ExternalLink size={14} />
+
             {links.length > 1
               ? `Dokumentasi ${index + 1}`
               : "Lihat Dokumentasi"}
@@ -186,7 +200,10 @@ function DataPemeriksaan() {
     );
   }
 
-  // Memotong teks kendala agar tabel tidak terlalu lebar.
+  // =======================================================
+  // MENAMPILKAN KENDALA DI LAPANGAN
+  // =======================================================
+
   function renderKendala(item) {
     const kendala = getCellValue(item, KENDALA_INDEX);
 
@@ -222,6 +239,10 @@ function DataPemeriksaan() {
     );
   }
 
+  // =======================================================
+  // MENENTUKAN TAMPILAN SETIAP SEL
+  // =======================================================
+
   function renderCell(item, columnIndex) {
     if (columnIndex === DOKUMENTASI_INDEX) {
       return renderDokumentasi(item);
@@ -234,8 +255,13 @@ function DataPemeriksaan() {
     return getCellValue(item, columnIndex);
   }
 
+  // =======================================================
+  // TAMPILAN HALAMAN
+  // =======================================================
+
   return (
     <div className="data-pemeriksaan">
+      {/* HEADER */}
       <div className="pemeriksaan-header">
         <div className="pemeriksaan-header-icon">
           <ClipboardList size={32} />
@@ -243,35 +269,42 @@ function DataPemeriksaan() {
 
         <div>
           <h1>Data Pemeriksaan PSN</h1>
+
           <p>
             Data laporan pemeriksaan PSN yang terintegrasi dengan Google Sheets.
           </p>
         </div>
       </div>
 
+      {/* CONTAINER DATA */}
       <div className="pemeriksaan-container">
+        {/* HEADER TABEL */}
         <div className="pemeriksaan-top">
           <div>
             <h2>Daftar Laporan Pemeriksaan PSN</h2>
+
             <p>Data ditampilkan sesuai kolom pada Google Sheets.</p>
           </div>
 
           <div className="pemeriksaan-top-actions">
+            {/* MUAT ULANG */}
             <button
               type="button"
               className="btn-refresh-sheet"
               onClick={fetchLaporan}
-              disabled={loading}
+              disabled={loading || syncing}
               title="Muat ulang data"
+              aria-label="Muat ulang data pemeriksaan"
             >
-              <RefreshCw size={17} />
+              <RefreshCw size={17} className={loading ? "sync-spinning" : ""} />
             </button>
 
+            {/* SINKRONISASI */}
             <button
               type="button"
               className="btn-sync-sheet"
               onClick={handleSync}
-              disabled={syncing}
+              disabled={syncing || loading}
             >
               <RefreshCw size={17} className={syncing ? "sync-spinning" : ""} />
 
@@ -280,21 +313,39 @@ function DataPemeriksaan() {
           </div>
         </div>
 
+        {/* NOTIFIKASI BERHASIL */}
         {notice && (
           <div className="pemeriksaan-notice">
             <FileSpreadsheet size={18} />
+
             <span>{notice}</span>
-            <button onClick={() => setNotice("")}>×</button>
+
+            <button
+              type="button"
+              onClick={() => setNotice("")}
+              aria-label="Tutup notifikasi"
+            >
+              ×
+            </button>
           </div>
         )}
 
+        {/* NOTIFIKASI ERROR */}
         {error && (
           <div className="pemeriksaan-error">
             <span>{error}</span>
-            <button onClick={() => setError("")}>×</button>
+
+            <button
+              type="button"
+              onClick={() => setError("")}
+              aria-label="Tutup pesan kesalahan"
+            >
+              ×
+            </button>
           </div>
         )}
 
+        {/* TABEL */}
         <div className="pemeriksaan-table-wrapper">
           <table className="pemeriksaan-table">
             <thead>
@@ -302,7 +353,7 @@ function DataPemeriksaan() {
                 <th>No.</th>
 
                 {COLUMNS.map((column, index) => (
-                  <th key={index}>{column}</th>
+                  <th key={`header-${index}`}>{column}</th>
                 ))}
               </tr>
             </thead>
@@ -328,37 +379,43 @@ function DataPemeriksaan() {
                   </td>
                 </tr>
               ) : (
-                laporan.map((item, rowIndex) => (
-                  <tr key={item.id}>
-                    <td>{rowIndex + 1}</td>
+                laporan.map((item, rowIndex) => {
+                  const rowKey =
+                    item.id ?? item.id_raw ?? `laporan-${rowIndex}`;
 
-                    {COLUMNS.map((column, columnIndex) => (
-                      <td
-                        key={columnIndex}
-                        className={
-                          columnIndex === DOKUMENTASI_INDEX
-                            ? "td-dokumentasi"
-                            : columnIndex === KENDALA_INDEX
-                              ? "td-kendala"
-                              : ""
-                        }
-                      >
-                        {renderCell(item, columnIndex)}
-                      </td>
-                    ))}
-                  </tr>
-                ))
+                  return (
+                    <tr key={rowKey}>
+                      <td>{rowIndex + 1}</td>
+
+                      {COLUMNS.map((column, columnIndex) => (
+                        <td
+                          key={`cell-${columnIndex}`}
+                          className={
+                            columnIndex === DOKUMENTASI_INDEX
+                              ? "td-dokumentasi"
+                              : columnIndex === KENDALA_INDEX
+                                ? "td-kendala"
+                                : ""
+                          }
+                        >
+                          {renderCell(item, columnIndex)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
 
+        {/* FOOTER TABEL */}
         <div className="pemeriksaan-footer">
           Menampilkan {laporan.length} laporan pemeriksaan
         </div>
       </div>
 
-      {/* Modal detail kendala */}
+      {/* MODAL DETAIL KENDALA */}
       {kendalaTerpilih && (
         <div
           className="kendala-modal-overlay"
@@ -371,6 +428,7 @@ function DataPemeriksaan() {
             <div className="kendala-modal-header">
               <div>
                 <h3>Kendala di Lapangan</h3>
+
                 <p>Detail kendala pemeriksaan PSN</p>
               </div>
 
@@ -378,6 +436,7 @@ function DataPemeriksaan() {
                 type="button"
                 className="kendala-modal-close"
                 onClick={() => setKendalaTerpilih(null)}
+                aria-label="Tutup modal"
               >
                 <X size={20} />
               </button>

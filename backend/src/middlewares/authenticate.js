@@ -14,6 +14,7 @@ async function authenticate(req, res, next) {
     }
 
     let payload;
+
     try {
       payload = jwt.verify(token, process.env.JWT_SECRET);
     } catch {
@@ -23,22 +24,52 @@ async function authenticate(req, res, next) {
       });
     }
 
-    const result = await query(
-      `SELECT id_pengguna, nama_lengkap, email, role, status_akun,
-              wajib_ubah_password
-       FROM pengguna
-       WHERE id_pengguna = $1`,
-      [payload.id_pengguna]
-    );
-
-    if (!result.rowCount || result.rows[0].status_akun !== "aktif") {
+    if (!payload.id_pengguna) {
       return res.status(401).json({
         success: false,
-        message: "Akun tidak ditemukan atau tidak aktif.",
+        message: "Token tidak memiliki identitas pengguna.",
       });
     }
 
-    req.user = result.rows[0];
+    const result = await query(
+      `SELECT
+        id_pengguna,
+        nama_lengkap,
+        email,
+        role,
+        status_akun,
+        wajib_ubah_password
+       FROM pengguna
+       WHERE id_pengguna = $1`,
+      [payload.id_pengguna],
+    );
+
+    if (!result.rowCount) {
+      return res.status(401).json({
+        success: false,
+        message: "Akun tidak ditemukan.",
+      });
+    }
+
+    const user = result.rows[0];
+
+    if (user.status_akun !== "aktif") {
+      return res.status(401).json({
+        success: false,
+        message: "Akun tidak aktif.",
+      });
+    }
+
+    if (!["admin", "superadmin"].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Role pengguna tidak valid.",
+      });
+    }
+
+    // Data pengguna dari database menjadi sumber kebenaran.
+    req.user = user;
+
     next();
   } catch (error) {
     next(error);

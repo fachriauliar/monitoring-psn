@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
-import logoJakarta from "../../assets/images/Logo-Jakarta-Selatan.png";
-import "./AuthPages.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+import { useAuth } from "../../contexts/AuthContext";
+import logoJakarta from "../../assets/images/Logo-Jakarta-Selatan.png";
+
+import "./AuthPages.css";
 
 function UbahPassword() {
   const navigate = useNavigate();
+
+  const { user, changePassword, logout } = useAuth();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -23,6 +26,10 @@ function UbahPassword() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // =======================================================
+  // TAMPILKAN / SEMBUNYIKAN PASSWORD
+  // =======================================================
+
   const togglePassword = (field) => {
     setShowPassword((prev) => ({
       ...prev,
@@ -30,13 +37,17 @@ function UbahPassword() {
     }));
   };
 
+  // =======================================================
+  // PROSES UBAH PASSWORD
+  // =======================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setError("");
     setSuccess("");
 
-    // Validasi kata sandi baru
+    // Validasi panjang password.
     if (newPassword.length < 8) {
       setError("Kata sandi baru minimal 8 karakter.");
       return;
@@ -47,19 +58,20 @@ function UbahPassword() {
       return;
     }
 
+    // Validasi konfirmasi password.
     if (newPassword !== confirmPassword) {
       setError("Konfirmasi kata sandi tidak sesuai.");
       return;
     }
 
+    // Password baru tidak boleh sama dengan password lama.
     if (currentPassword === newPassword) {
       setError("Kata sandi baru harus berbeda dari kata sandi saat ini.");
       return;
     }
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
+    if (!user) {
+      logout();
       navigate("/login", { replace: true });
       return;
     }
@@ -67,67 +79,27 @@ function UbahPassword() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/change-password`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          password_lama: currentPassword,
-          password_baru: newPassword,
-          konfirmasi_password: confirmPassword,
-        }),
+      await changePassword({
+        password_lama: currentPassword,
+        password_baru: newPassword,
+        konfirmasi_password: confirmPassword,
       });
 
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-
-          navigate("/login", { replace: true });
-          return;
-        }
-
-        throw new Error(result.message || "Gagal mengubah kata sandi.");
-      }
-
       setSuccess("Kata sandi berhasil diperbarui.");
-
-      // Perbarui informasi wajib ubah password pada localStorage
-      const storedUser = localStorage.getItem("user");
-
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser);
-
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              ...user,
-              wajib_ubah_password: false,
-            }),
-          );
-        } catch {
-          // Abaikan jika data user di localStorage tidak valid
-        }
-      }
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // Arahkan berdasarkan role pengguna
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      // Arahkan ke dashboard sesuai role.
+      const dashboard =
+        user.role === "superadmin"
+          ? "/superadmin/dashboard"
+          : "/admin/dashboard";
 
+      // Berikan waktu agar pesan berhasil terlihat.
       setTimeout(() => {
-        if (user.role === "kasie") {
-          navigate("/kasie/dashboard", { replace: true });
-        } else {
-          navigate("/admin/dashboard", { replace: true });
-        }
+        navigate(dashboard, { replace: true });
       }, 1200);
     } catch (err) {
       setError(err.message || "Terjadi kesalahan saat mengubah kata sandi.");
@@ -135,6 +107,10 @@ function UbahPassword() {
       setLoading(false);
     }
   };
+
+  // =======================================================
+  // TAMPILAN
+  // =======================================================
 
   return (
     <main className="auth-page">
@@ -150,6 +126,7 @@ function UbahPassword() {
 
         <div className="auth-brand-content">
           <span>Keamanan akun Anda</span>
+
           <h2>Buat kata sandi baru untuk menjaga keamanan akun Anda</h2>
         </div>
       </section>
@@ -163,7 +140,7 @@ function UbahPassword() {
           </p>
 
           <form onSubmit={handleSubmit}>
-            {/* Kata sandi saat ini */}
+            {/* KATA SANDI SAAT INI */}
             <div className="auth-field">
               <label>Kata sandi saat ini</label>
 
@@ -175,13 +152,19 @@ function UbahPassword() {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   autoComplete="current-password"
                   required
+                  disabled={loading}
                 />
 
                 <button
                   type="button"
                   className="auth-eye-button"
                   onClick={() => togglePassword("current")}
-                  aria-label="Tampilkan kata sandi saat ini"
+                  aria-label={
+                    showPassword.current
+                      ? "Sembunyikan kata sandi saat ini"
+                      : "Tampilkan kata sandi saat ini"
+                  }
+                  disabled={loading}
                 >
                   {showPassword.current ? (
                     <EyeOff size={20} />
@@ -192,7 +175,7 @@ function UbahPassword() {
               </div>
             </div>
 
-            {/* Kata sandi baru */}
+            {/* KATA SANDI BARU */}
             <div className="auth-field">
               <label>Kata sandi baru</label>
 
@@ -204,13 +187,19 @@ function UbahPassword() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   autoComplete="new-password"
                   required
+                  disabled={loading}
                 />
 
                 <button
                   type="button"
                   className="auth-eye-button"
                   onClick={() => togglePassword("new")}
-                  aria-label="Tampilkan kata sandi baru"
+                  aria-label={
+                    showPassword.new
+                      ? "Sembunyikan kata sandi baru"
+                      : "Tampilkan kata sandi baru"
+                  }
+                  disabled={loading}
                 >
                   {showPassword.new ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -221,7 +210,7 @@ function UbahPassword() {
               </small>
             </div>
 
-            {/* Konfirmasi kata sandi */}
+            {/* KONFIRMASI KATA SANDI */}
             <div className="auth-field">
               <label>Konfirmasi kata sandi</label>
 
@@ -233,13 +222,19 @@ function UbahPassword() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   autoComplete="new-password"
                   required
+                  disabled={loading}
                 />
 
                 <button
                   type="button"
                   className="auth-eye-button"
                   onClick={() => togglePassword("confirm")}
-                  aria-label="Tampilkan konfirmasi kata sandi"
+                  aria-label={
+                    showPassword.confirm
+                      ? "Sembunyikan konfirmasi kata sandi"
+                      : "Tampilkan konfirmasi kata sandi"
+                  }
+                  disabled={loading}
                 >
                   {showPassword.confirm ? (
                     <EyeOff size={20} />
@@ -250,12 +245,21 @@ function UbahPassword() {
               </div>
             </div>
 
-            {/* Pesan error */}
-            {error && <p className="auth-error">{error}</p>}
+            {/* PESAN ERROR */}
+            {error && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
 
-            {/* Pesan berhasil */}
-            {success && <p className="auth-success">{success}</p>}
+            {/* PESAN BERHASIL */}
+            {success && (
+              <p className="auth-success" role="status">
+                {success}
+              </p>
+            )}
 
+            {/* TOMBOL SIMPAN */}
             <button
               type="submit"
               className="auth-submit-button"

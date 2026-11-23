@@ -165,7 +165,7 @@ Data laporan yang valid dipakai untuk ringkasan publik.
 ## Keamanan
 - Password disimpan dengan bcrypt.
 - JWT secret hanya dibaca dari `.env`.
-- Endpoint pengelolaan pengguna hanya dapat diakses role `kasie`.
+- Endpoint pengelolaan pengguna hanya dapat diakses role `superadmin`.
 - Tidak ada endpoint pendaftaran publik.
-- Akun Kasie aktif terakhir tidak dapat dihapus atau diturunkan rolenya.
+- Akun superadmin aktif terakhir tidak dapat dihapus atau diturunkan rolenya.
 - Logout dilakukan di frontend dengan menghapus token lokal; token JWT tetap berlaku sampai kedaluwarsa. Untuk pencabutan token lebih awal diperlukan mekanisme token revocation.

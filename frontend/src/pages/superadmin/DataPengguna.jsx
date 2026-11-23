@@ -21,7 +21,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const INITIAL_STATISTICS = {
   total_pengguna: 0,
   total_admin: 0,
-  total_kasie: 0,
+  total_superadmin: 0,
   total_aktif: 0,
 };
 
@@ -164,7 +164,7 @@ function DataPengguna() {
       setStatistics({
         total_pengguna: Number(result.data.total_pengguna) || 0,
         total_admin: Number(result.data.total_admin) || 0,
-        total_kasie: Number(result.data.total_kasie) || 0,
+        total_superadmin: Number(result.data.total_superadmin) || 0,
         total_aktif: Number(result.data.total_aktif) || 0,
       });
     } catch (err) {
@@ -351,7 +351,7 @@ function DataPengguna() {
   function getRoleLabel(role) {
     const labels = {
       admin: "Admin Kelurahan",
-      kasie: "Kasie Kesra",
+      superadmin: "Superadmin",
     };
 
     return labels[role] || role;
@@ -382,7 +382,7 @@ function DataPengguna() {
 
         <button
           className="btn-tambah-pengguna"
-          onClick={() => navigate("/kasie/pengguna/tambah")}
+          onClick={() => navigate("/superadmin/pengguna/tambah")}
         >
           <Plus size={18} />
           Tambah Pengguna
@@ -419,8 +419,8 @@ function DataPengguna() {
           </div>
 
           <div>
-            <span>Kasie Kesra</span>
-            <h2>{loadingStatistics ? "..." : statistics.total_kasie}</h2>
+            <span>Superadmin</span>
+            <h2>{loadingStatistics ? "..." : statistics.total_superadmin}</h2>
           </div>
         </div>
 
@@ -442,7 +442,7 @@ function DataPengguna() {
         <div className="pengguna-table-header">
           <div>
             <h2>Daftar Pengguna</h2>
-            <p>Daftar akun Admin Kelurahan dan Kasie Kesra.</p>
+            <p>Daftar akun Admin Kelurahan dan Superadmin.</p>
           </div>
 
           <button
@@ -495,7 +495,7 @@ function DataPengguna() {
           >
             <option value="">Semua Role</option>
             <option value="admin">Admin Kelurahan</option>
-            <option value="kasie">Kasie Kesra</option>
+            <option value="superadmin">Superadmin</option>
           </select>
 
           <select
@@ -579,7 +579,7 @@ function DataPengguna() {
                           title="Edit pengguna"
                           disabled={processingId === user.id_pengguna}
                           onClick={() =>
-                            navigate(`/kasie/pengguna/${user.id_pengguna}/edit`)
+                            navigate(`/superadmin/pengguna/${user.id_pengguna}/edit`)
                           }
                         >
                           <Pencil size={16} />

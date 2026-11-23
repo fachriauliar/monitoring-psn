@@ -181,7 +181,7 @@ function FormPengguna() {
         }
       }
 
-      navigate("/kasie/data-pengguna", { replace: true });
+      navigate("/superadmin/data-pengguna", { replace: true });
     } catch (error) {
       setErrorMessage(error.message);
     } finally {
@@ -190,7 +190,7 @@ function FormPengguna() {
   }
 
   function handleBack() {
-    navigate("/kasie/data-pengguna");
+    navigate("/superadmin/data-pengguna");
   }
 
   if (fetching) {
@@ -209,7 +209,7 @@ function FormPengguna() {
           <p>
             {isEdit
               ? "Perbarui informasi akun pengguna."
-              : "Tambahkan akun Admin Kelurahan atau Kasie Kesra baru."}
+              : "Tambahkan akun Admin Kelurahan atau Superadmin baru."}
           </p>
         </div>
 
@@ -342,7 +342,7 @@ function FormPengguna() {
               disabled={loading}
             >
               <option value="admin">Admin Kelurahan</option>
-              <option value="kasie">Kasie Kesra</option>
+              <option value="superadmin">Superadmin</option>
             </select>
           </div>
         </div>

@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "db:init": "node scripts/init-database.js",
-    "seed:kasie": "node scripts/create-kasie.js"
+    "seed:user": "node scripts/create-user.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -19,7 +19,7 @@
     "helmet": "^8.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.13.1"
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

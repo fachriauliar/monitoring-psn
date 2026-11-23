@@ -1,13 +1,107 @@
 const bcrypt = require("bcrypt");
+const crypto = require("crypto");
 const { query, pool } = require("../config/database");
 
-const DEFAULT_PASSWORD = "Psn@2026Awal";
+// =========================================================
+// KONFIGURASI
+// =========================================================
+
+const ALLOWED_ROLES = ["admin", "superadmin"];
+const ALLOWED_STATUSES = ["aktif", "nonaktif", "diblokir"];
+
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 
 function publicColumns() {
-  return `id_pengguna, nama_lengkap, nip, email, no_hp, jabatan, bagian,
-          pangkat_golongan, role, status_akun, wajib_ubah_password,
-          created_at, updated_at`;
+  return `
+    id_pengguna,
+    nama_lengkap,
+    nip,
+    email,
+    no_hp,
+    jabatan,
+    bagian,
+    pangkat_golongan,
+    role,
+    status_akun,
+    wajib_ubah_password,
+    created_at,
+    updated_at
+  `;
 }
+
+function generateTemporaryPassword() {
+  return crypto.randomBytes(12).toString("base64url");
+}
+
+function isValidUserId(id) {
+  const value = Number(id);
+  return Number.isInteger(value) && value > 0;
+}
+
+function isValidBcryptRounds() {
+  return (
+    Number.isInteger(BCRYPT_ROUNDS) &&
+    BCRYPT_ROUNDS >= 10 &&
+    BCRYPT_ROUNDS <= 15
+  );
+}
+
+// Memastikan akun Superadmin aktif terakhir tidak
+// kehilangan role, status aktif, atau dihapus.
+async function protectLastSuperadmin(client, targetId, action) {
+  const target = await client.query(
+    `SELECT id_pengguna, role, status_akun
+     FROM pengguna
+     WHERE id_pengguna = $1
+     FOR UPDATE`,
+    [targetId],
+  );
+
+  if (!target.rowCount) {
+    return {
+      exists: false,
+      blocked: false,
+    };
+  }
+
+  const user = target.rows[0];
+
+  const removesActiveSuperadmin =
+    user.role === "superadmin" &&
+    user.status_akun === "aktif" &&
+    action === "remove";
+
+  if (!removesActiveSuperadmin) {
+    return {
+      exists: true,
+      blocked: false,
+    };
+  }
+
+  const count = await client.query(
+    `SELECT COUNT(*)::int AS total
+     FROM pengguna
+     WHERE role = 'superadmin'
+       AND status_akun = 'aktif'`,
+  );
+
+  if (count.rows[0].total <= 1) {
+    return {
+      exists: true,
+      blocked: true,
+    };
+  }
+
+  return {
+    exists: true,
+    blocked: false,
+  };
+}
+
+// =========================================================
+// 1. DAFTAR PENGGUNA
+// GET /api/pengguna
+// =========================================================
 
 async function listUsers(req, res, next) {
   try {
@@ -18,40 +112,60 @@ async function listUsers(req, res, next) {
       page = "1",
       limit = "20",
     } = req.query;
+
     const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
     const pageSize = Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100);
+
     const offset = (pageNumber - 1) * pageSize;
 
     const conditions = [];
     const values = [];
-    if (search.trim()) {
-      values.push(`%${search.trim()}%`);
-      conditions.push(
-        `(nama_lengkap ILIKE $${values.length} OR email ILIKE $${values.length} OR COALESCE(no_hp,'') ILIKE $${values.length} OR COALESCE(nip,'') ILIKE $${values.length})`,
-      );
+
+    if (String(search).trim()) {
+      values.push(`%${String(search).trim()}%`);
+
+      conditions.push(`
+        (
+          nama_lengkap ILIKE $${values.length}
+          OR email ILIKE $${values.length}
+          OR COALESCE(no_hp, '') ILIKE $${values.length}
+          OR COALESCE(nip, '') ILIKE $${values.length}
+        )
+      `);
     }
-    if (["admin", "kasie"].includes(role)) {
+
+    if (ALLOWED_ROLES.includes(role)) {
       values.push(role);
-      conditions.push(`role=$${values.length}`);
+      conditions.push(`role = $${values.length}`);
     }
-    if (["aktif", "nonaktif", "diblokir"].includes(status)) {
+
+    if (ALLOWED_STATUSES.includes(status)) {
       values.push(status);
-      conditions.push(`status_akun=$${values.length}`);
+      conditions.push(`status_akun = $${values.length}`);
     }
 
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
     const countResult = await query(
-      `SELECT COUNT(*)::int AS total FROM pengguna ${where}`,
+      `SELECT COUNT(*)::int AS total
+       FROM pengguna
+       ${where}`,
       values,
     );
+
     const dataValues = [...values, pageSize, offset];
 
     const result = await query(
-      `SELECT ${publicColumns()} FROM pengguna ${where}
+      `SELECT ${publicColumns()}
+       FROM pengguna
+       ${where}
        ORDER BY created_at DESC
-       LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+       LIMIT $${values.length + 1}
+       OFFSET $${values.length + 2}`,
       dataValues,
     );
+
+    const total = countResult.rows[0].total;
 
     return res.json({
       success: true,
@@ -60,8 +174,8 @@ async function listUsers(req, res, next) {
       pagination: {
         page: pageNumber,
         limit: pageSize,
-        total: countResult.rows[0].total,
-        total_pages: Math.ceil(countResult.rows[0].total / pageSize),
+        total,
+        total_pages: Math.ceil(total / pageSize),
       },
     });
   } catch (error) {
@@ -69,15 +183,37 @@ async function listUsers(req, res, next) {
   }
 }
 
-// Mengambil statistik pengguna
+// =========================================================
+// 2. STATISTIK PENGGUNA
+// GET /api/pengguna/statistics
+// =========================================================
+
 async function getUserStatistics(req, res, next) {
   try {
     const result = await query(
       `SELECT
         COUNT(*)::int AS total_pengguna,
-        COUNT(*) FILTER (WHERE role = 'admin')::int AS total_admin,
-        COUNT(*) FILTER (WHERE role = 'kasie')::int AS total_kasie,
-        COUNT(*) FILTER (WHERE status_akun = 'aktif')::int AS total_aktif
+
+        COUNT(*) FILTER (
+          WHERE role = 'admin'
+        )::int AS total_admin,
+
+        COUNT(*) FILTER (
+          WHERE role = 'superadmin'
+        )::int AS total_superadmin,
+
+        COUNT(*) FILTER (
+          WHERE status_akun = 'aktif'
+        )::int AS total_aktif,
+
+        COUNT(*) FILTER (
+          WHERE status_akun = 'nonaktif'
+        )::int AS total_nonaktif,
+
+        COUNT(*) FILTER (
+          WHERE status_akun = 'diblokir'
+        )::int AS total_diblokir
+
        FROM pengguna`,
     );
 
@@ -91,17 +227,34 @@ async function getUserStatistics(req, res, next) {
   }
 }
 
+// =========================================================
+// 3. DETAIL PENGGUNA
+// GET /api/pengguna/:id
+// =========================================================
+
 async function getUser(req, res, next) {
   try {
+    if (!isValidUserId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID pengguna tidak valid.",
+      });
+    }
+
     const result = await query(
-      `SELECT ${publicColumns()} FROM pengguna WHERE id_pengguna=$1`,
+      `SELECT ${publicColumns()}
+       FROM pengguna
+       WHERE id_pengguna = $1`,
       [req.params.id],
     );
+
     if (!result.rowCount) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Pengguna tidak ditemukan." });
+      return res.status(404).json({
+        success: false,
+        message: "Pengguna tidak ditemukan.",
+      });
     }
+
     return res.json({
       success: true,
       message: "Detail pengguna berhasil diambil.",
@@ -112,8 +265,20 @@ async function getUser(req, res, next) {
   }
 }
 
+// =========================================================
+// 4. TAMBAH PENGGUNA
+// POST /api/pengguna
+// =========================================================
+
 async function createUser(req, res, next) {
   try {
+    if (!isValidBcryptRounds()) {
+      return res.status(500).json({
+        success: false,
+        message: "Konfigurasi BCRYPT_ROUNDS tidak valid.",
+      });
+    }
+
     const {
       nama_lengkap,
       nip,
@@ -123,52 +288,92 @@ async function createUser(req, res, next) {
       bagian,
       pangkat_golongan,
       role,
-      password,
     } = req.body;
 
-    const hash = await bcrypt.hash(
-      DEFAULT_PASSWORD,
-      Number(process.env.BCRYPT_ROUNDS || 12),
-    );
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Role pengguna tidak valid.",
+      });
+    }
+
+    const temporaryPassword = generateTemporaryPassword();
+
+    const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_ROUNDS);
 
     const result = await query(
-      `INSERT INTO pengguna
-       (nama_lengkap, nip, email, no_hp, jabatan, bagian,
-        pangkat_golongan, role, password_hash, wajib_ubah_password)
-       VALUES ($1, NULLIF($2,''), $3, NULLIF($4,''), NULLIF($5,''),
-               NULLIF($6,''), NULLIF($7,''), $8, $9, TRUE)
-       RETURNING ${publicColumns()}`,
+      `INSERT INTO pengguna (
+        nama_lengkap,
+        nip,
+        email,
+        no_hp,
+        jabatan,
+        bagian,
+        pangkat_golongan,
+        role,
+        password_hash,
+        wajib_ubah_password
+      )
+      VALUES (
+        $1,
+        NULLIF($2, ''),
+        $3,
+        NULLIF($4, ''),
+        NULLIF($5, ''),
+        NULLIF($6, ''),
+        NULLIF($7, ''),
+        $8,
+        $9,
+        TRUE
+      )
+      RETURNING ${publicColumns()}`,
       [
         nama_lengkap,
         nip || "",
-        email,
+        String(email).trim().toLowerCase(),
         no_hp || "",
         jabatan || "",
         bagian || "",
         pangkat_golongan || "",
         role,
-        hash,
+        passwordHash,
       ],
     );
 
     return res.status(201).json({
       success: true,
       message:
-        "Pengguna berhasil ditambahkan. Pengguna wajib mengubah password saat login pertama.",
+        "Pengguna berhasil ditambahkan. Password sementara ditampilkan satu kali dan wajib diganti saat login pertama.",
       data: result.rows[0],
+      temporary_password: temporaryPassword,
     });
   } catch (error) {
     if (error.code === "23505") {
-      return res
-        .status(409)
-        .json({ success: false, message: "Email atau NIP sudah digunakan." });
+      return res.status(409).json({
+        success: false,
+        message: "Email atau NIP sudah digunakan.",
+      });
     }
+
     next(error);
   }
 }
 
+// =========================================================
+// 5. PERBARUI PENGGUNA
+// PUT /api/pengguna/:id
+// =========================================================
+
 async function updateUser(req, res, next) {
+  if (!isValidUserId(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      message: "ID pengguna tidak valid.",
+    });
+  }
+
   const client = await pool.connect();
+
   try {
     const {
       nama_lengkap,
@@ -181,44 +386,75 @@ async function updateUser(req, res, next) {
       role,
     } = req.body;
 
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Role pengguna tidak valid.",
+      });
+    }
+
     await client.query("BEGIN");
 
     const current = await client.query(
-      "SELECT id_pengguna, role FROM pengguna WHERE id_pengguna=$1 FOR UPDATE",
+      `SELECT id_pengguna, role, status_akun
+       FROM pengguna
+       WHERE id_pengguna = $1
+       FOR UPDATE`,
       [req.params.id],
     );
 
     if (!current.rowCount) {
       await client.query("ROLLBACK");
-      return res
-        .status(404)
-        .json({ success: false, message: "Pengguna tidak ditemukan." });
+
+      return res.status(404).json({
+        success: false,
+        message: "Pengguna tidak ditemukan.",
+      });
     }
 
-    if (current.rows[0].role === "kasie" && role !== "kasie") {
+    const currentUser = current.rows[0];
+
+    // Lindungi Superadmin aktif terakhir.
+    if (
+      currentUser.role === "superadmin" &&
+      currentUser.status_akun === "aktif" &&
+      role !== "superadmin"
+    ) {
       const count = await client.query(
-        "SELECT COUNT(*)::int AS total FROM pengguna WHERE role='kasie' AND status_akun='aktif'",
+        `SELECT COUNT(*)::int AS total
+         FROM pengguna
+         WHERE role = 'superadmin'
+           AND status_akun = 'aktif'`,
       );
+
       if (count.rows[0].total <= 1) {
         await client.query("ROLLBACK");
+
         return res.status(400).json({
           success: false,
-          message: "Tidak dapat mengubah role Kasie aktif terakhir.",
+          message: "Tidak dapat mengubah role Superadmin aktif terakhir.",
         });
       }
     }
 
     const updated = await client.query(
       `UPDATE pengguna
-       SET nama_lengkap=$1, nip=NULLIF($2,''), email=$3, no_hp=NULLIF($4,''),
-           jabatan=NULLIF($5,''), bagian=NULLIF($6,''),
-           pangkat_golongan=NULLIF($7,''), role=$8, updated_at=NOW()
-       WHERE id_pengguna=$9
+       SET
+         nama_lengkap = $1,
+         nip = NULLIF($2, ''),
+         email = $3,
+         no_hp = NULLIF($4, ''),
+         jabatan = NULLIF($5, ''),
+         bagian = NULLIF($6, ''),
+         pangkat_golongan = NULLIF($7, ''),
+         role = $8,
+         updated_at = NOW()
+       WHERE id_pengguna = $9
        RETURNING ${publicColumns()}`,
       [
         nama_lengkap,
         nip || "",
-        email,
+        String(email).trim().toLowerCase(),
         no_hp || "",
         jabatan || "",
         bagian || "",
@@ -229,6 +465,7 @@ async function updateUser(req, res, next) {
     );
 
     await client.query("COMMIT");
+
     return res.json({
       success: true,
       message: "Data pengguna berhasil diperbarui.",
@@ -236,24 +473,43 @@ async function updateUser(req, res, next) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
+
     if (error.code === "23505") {
-      return res
-        .status(409)
-        .json({ success: false, message: "Email atau NIP sudah digunakan." });
+      return res.status(409).json({
+        success: false,
+        message: "Email atau NIP sudah digunakan.",
+      });
     }
+
     next(error);
   } finally {
     client.release();
   }
 }
 
+// =========================================================
+// 6. PERBARUI STATUS PENGGUNA
+// PATCH /api/pengguna/:id/status
+// =========================================================
+
 async function updateUserStatus(req, res, next) {
+  if (!isValidUserId(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      message: "ID pengguna tidak valid.",
+    });
+  }
+
+  const client = await pool.connect();
+
   try {
     const { status_akun } = req.body;
-    if (!["aktif", "nonaktif", "diblokir"].includes(status_akun)) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Status akun tidak valid." });
+
+    if (!ALLOWED_STATUSES.includes(status_akun)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status akun tidak valid.",
+      });
     }
 
     if (
@@ -266,48 +522,105 @@ async function updateUserStatus(req, res, next) {
       });
     }
 
-    const result = await query(
-      `UPDATE pengguna SET status_akun=$1, updated_at=NOW()
-       WHERE id_pengguna=$2 RETURNING ${publicColumns()}`,
+    await client.query("BEGIN");
+
+    const current = await client.query(
+      `SELECT id_pengguna, role, status_akun
+       FROM pengguna
+       WHERE id_pengguna = $1
+       FOR UPDATE`,
+      [req.params.id],
+    );
+
+    if (!current.rowCount) {
+      await client.query("ROLLBACK");
+
+      return res.status(404).json({
+        success: false,
+        message: "Pengguna tidak ditemukan.",
+      });
+    }
+
+    const user = current.rows[0];
+
+    if (
+      user.role === "superadmin" &&
+      user.status_akun === "aktif" &&
+      status_akun !== "aktif"
+    ) {
+      const count = await client.query(
+        `SELECT COUNT(*)::int AS total
+         FROM pengguna
+         WHERE role = 'superadmin'
+           AND status_akun = 'aktif'`,
+      );
+
+      if (count.rows[0].total <= 1) {
+        await client.query("ROLLBACK");
+
+        return res.status(400).json({
+          success: false,
+          message: "Tidak dapat menonaktifkan Superadmin aktif terakhir.",
+        });
+      }
+    }
+
+    const result = await client.query(
+      `UPDATE pengguna
+       SET status_akun = $1,
+           updated_at = NOW()
+       WHERE id_pengguna = $2
+       RETURNING ${publicColumns()}`,
       [status_akun, req.params.id],
     );
 
-    if (!result.rowCount) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Pengguna tidak ditemukan." });
-    }
+    await client.query("COMMIT");
+
     return res.json({
       success: true,
       message: "Status akun berhasil diperbarui.",
       data: result.rows[0],
     });
   } catch (error) {
+    await client.query("ROLLBACK");
     next(error);
+  } finally {
+    client.release();
   }
 }
 
+// =========================================================
+// 7. RESET PASSWORD PENGGUNA
+// PATCH /api/pengguna/:id/reset-password
+// =========================================================
+
 async function resetUserPassword(req, res, next) {
   try {
-    const userId = Number(req.params.id);
-    const currentUserId = Number(req.user.id_pengguna);
-
-    if (!Number.isInteger(userId) || userId <= 0) {
+    if (!isValidUserId(req.params.id)) {
       return res.status(400).json({
         success: false,
         message: "ID pengguna tidak valid.",
       });
     }
 
-    // Mencegah Kasie mereset password akunnya sendiri
-    if (userId === currentUserId) {
-      return res.status(400).json({
+    if (!isValidBcryptRounds()) {
+      return res.status(500).json({
         success: false,
-        message: "Anda tidak dapat mereset password akun sendiri melalui fitur ini.",
+        message: "Konfigurasi BCRYPT_ROUNDS tidak valid.",
       });
     }
 
-    // Pastikan pengguna tersedia
+    const userId = Number(req.params.id);
+    const currentUserId = Number(req.user.id_pengguna);
+
+    if (userId === currentUserId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Anda tidak dapat mereset password akun sendiri melalui fitur ini.",
+      });
+    }
+
     const existingUser = await query(
       `SELECT id_pengguna, nama_lengkap
        FROM pengguna
@@ -322,33 +635,49 @@ async function resetUserPassword(req, res, next) {
       });
     }
 
-    // Hash password default
-    const hash = await bcrypt.hash(
-      DEFAULT_PASSWORD,
-      Number(process.env.BCRYPT_ROUNDS || 12),
-    );
+    const temporaryPassword = generateTemporaryPassword();
 
-    // Perbarui password dan wajibkan perubahan password
+    const passwordHash = await bcrypt.hash(temporaryPassword, BCRYPT_ROUNDS);
+
     await query(
       `UPDATE pengguna
        SET password_hash = $1,
            wajib_ubah_password = TRUE,
            updated_at = NOW()
        WHERE id_pengguna = $2`,
-      [hash, userId],
+      [passwordHash, userId],
     );
 
     return res.json({
       success: true,
-      message: `Password ${existingUser.rows[0].nama_lengkap} berhasil direset ke password default. Pengguna wajib mengganti password saat login berikutnya.`,
+      message:
+        "Password berhasil direset. Pengguna wajib mengganti password saat login berikutnya.",
+      data: {
+        id_pengguna: userId,
+        nama_lengkap: existingUser.rows[0].nama_lengkap,
+      },
+      temporary_password: temporaryPassword,
     });
   } catch (error) {
     next(error);
   }
 }
 
+// =========================================================
+// 8. HAPUS PENGGUNA
+// DELETE /api/pengguna/:id
+// =========================================================
+
 async function deleteUser(req, res, next) {
+  if (!isValidUserId(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      message: "ID pengguna tidak valid.",
+    });
+  }
+
   const client = await pool.connect();
+
   try {
     if (Number(req.params.id) === Number(req.user.id_pengguna)) {
       return res.status(400).json({
@@ -358,38 +687,52 @@ async function deleteUser(req, res, next) {
     }
 
     await client.query("BEGIN");
+
     const target = await client.query(
-      "SELECT id_pengguna, role, status_akun FROM pengguna WHERE id_pengguna=$1 FOR UPDATE",
+      `SELECT id_pengguna, role, status_akun
+       FROM pengguna
+       WHERE id_pengguna = $1
+       FOR UPDATE`,
       [req.params.id],
     );
 
     if (!target.rowCount) {
       await client.query("ROLLBACK");
-      return res
-        .status(404)
-        .json({ success: false, message: "Pengguna tidak ditemukan." });
+
+      return res.status(404).json({
+        success: false,
+        message: "Pengguna tidak ditemukan.",
+      });
     }
 
-    if (
-      target.rows[0].role === "kasie" &&
-      target.rows[0].status_akun === "aktif"
-    ) {
+    const user = target.rows[0];
+
+    if (user.role === "superadmin" && user.status_akun === "aktif") {
       const count = await client.query(
-        "SELECT COUNT(*)::int AS total FROM pengguna WHERE role='kasie' AND status_akun='aktif'",
+        `SELECT COUNT(*)::int AS total
+         FROM pengguna
+         WHERE role = 'superadmin'
+           AND status_akun = 'aktif'`,
       );
+
       if (count.rows[0].total <= 1) {
         await client.query("ROLLBACK");
+
         return res.status(400).json({
           success: false,
-          message: "Tidak dapat menghapus Kasie aktif terakhir.",
+          message: "Tidak dapat menghapus Superadmin aktif terakhir.",
         });
       }
     }
 
-    await client.query("DELETE FROM pengguna WHERE id_pengguna=$1", [
-      req.params.id,
-    ]);
+    await client.query(
+      `DELETE FROM pengguna
+       WHERE id_pengguna = $1`,
+      [req.params.id],
+    );
+
     await client.query("COMMIT");
+
     return res.json({
       success: true,
       message: "Pengguna berhasil dihapus.",
@@ -397,11 +740,16 @@ async function deleteUser(req, res, next) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
+
     next(error);
   } finally {
     client.release();
   }
 }
+
+// =========================================================
+// EXPORT
+// =========================================================
 
 module.exports = {
   listUsers,

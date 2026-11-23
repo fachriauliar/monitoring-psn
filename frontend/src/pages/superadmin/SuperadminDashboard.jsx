@@ -12,7 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import "../../assets/styles/KasieDashboard.css";
+import "../../assets/styles/SuperadminDashboard.css";
 
 const statistik = [
   {
@@ -129,7 +129,7 @@ function GrafikABJ() {
 
   return (
     <svg
-      className="kasie-chart-svg"
+      className="superadmin-chart-svg"
       viewBox="0 0 440 250"
       preserveAspectRatio="none"
     >
@@ -218,38 +218,38 @@ function GrafikPemeriksaan() {
   const maxValue = 180;
 
   return (
-    <div className="kasie-bar-chart">
-      <div className="kasie-bar-yaxis">
+    <div className="superadmin-bar-chart">
+      <div className="superadmin-bar-yaxis">
         <span>180%</span>
         <span>90%</span>
         <span>0%</span>
       </div>
 
-      <div className="kasie-bar-content">
-        <div className="kasie-bar-grid">
+      <div className="superadmin-bar-content">
+        <div className="superadmin-bar-grid">
           <span />
           <span />
           <span />
         </div>
 
         {dataPemeriksaan.map((item) => (
-          <div className="kasie-bar-column" key={item.minggu}>
+          <div className="superadmin-bar-column" key={item.minggu}>
             <div
-              className="kasie-bar-stack"
+              className="superadmin-bar-stack"
               style={{
                 height: `${((item.bebas + item.positif) / maxValue) * 100}%`,
               }}
             >
               <div
-                className="kasie-bar-positive"
+                className="superadmin-bar-positive"
                 style={{
                   height: `${(item.positif / (item.bebas + item.positif)) * 100}%`,
                 }}
               />
-              <div className="kasie-bar-free" />
+              <div className="superadmin-bar-free" />
             </div>
 
-            <span className="kasie-bar-label">{item.minggu}</span>
+            <span className="superadmin-bar-label">{item.minggu}</span>
           </div>
         ))}
       </div>
@@ -257,7 +257,7 @@ function GrafikPemeriksaan() {
   );
 }
 
-function KasieDashboard() {
+function SuperadminDashboard() {
   const [periode, setPeriode] = useState("4 Minggu Terakhir");
   const [wilayah, setWilayah] = useState("Semua RW");
   const [filterAktivitas, setFilterAktivitas] = useState("Semua");
@@ -271,16 +271,16 @@ function KasieDashboard() {
   });
 
   return (
-    <div className="kasie-dashboard">
+    <div className="superadmin-dashboard">
       {/* Banner sambutan */}
-      <section className="kasie-welcome">
-        <h1>Selamat datang, KASIE KESRA</h1>
+      <section className="superadmin-welcome">
+        <h1>Selamat datang, SUPERADMIN</h1>
         <p>Pantau kondisi PSN dan tindak lanjut seluruh wilayah.</p>
       </section>
 
       {/* Filter dashboard */}
-      <section className="kasie-dashboard-filter">
-        <div className="kasie-filter-group">
+      <section className="superadmin-dashboard-filter">
+        <div className="superadmin-filter-group">
           <label>Periode</label>
           <select value={periode} onChange={(e) => setPeriode(e.target.value)}>
             <option>7 Hari Terakhir</option>
@@ -290,7 +290,7 @@ function KasieDashboard() {
           </select>
         </div>
 
-        <div className="kasie-filter-group">
+        <div className="superadmin-filter-group">
           <label>Wilayah</label>
           <select value={wilayah} onChange={(e) => setWilayah(e.target.value)}>
             <option>Semua RW</option>
@@ -301,7 +301,7 @@ function KasieDashboard() {
         </div>
 
         <button
-          className="kasie-download-button"
+          className="superadmin-download-button"
           type="button"
           onClick={() =>
             window.alert(
@@ -314,17 +314,17 @@ function KasieDashboard() {
       </section>
 
       {/* Kartu statistik */}
-      <section className="kasie-statistics">
+      <section className="superadmin-statistics">
         {statistik.map((item) => {
           const Icon = item.icon;
 
           return (
-            <div className="kasie-stat-card" key={item.label}>
-              <div className={`kasie-stat-icon ${item.color}`}>
+            <div className="superadmin-stat-card" key={item.label}>
+              <div className={`superadmin-stat-icon ${item.color}`}>
                 <Icon size={27} />
               </div>
 
-              <div className="kasie-stat-info">
+              <div className="superadmin-stat-info">
                 <span>{item.label}</span>
                 <strong>{item.value}</strong>
               </div>
@@ -334,9 +334,9 @@ function KasieDashboard() {
       </section>
 
       {/* Grafik ABJ dan pemeriksaan */}
-      <section className="kasie-chart-grid">
-        <div className="kasie-panel kasie-abj-panel">
-          <div className="kasie-panel-heading">
+      <section className="superadmin-chart-grid">
+        <div className="superadmin-panel superadmin-abj-panel">
+          <div className="superadmin-panel-heading">
             <h2>Grafik Perkembangan ABJ</h2>
 
             <select
@@ -352,11 +352,11 @@ function KasieDashboard() {
           <GrafikABJ />
         </div>
 
-        <div className="kasie-panel kasie-examination-panel">
-          <div className="kasie-panel-heading">
+        <div className="superadmin-panel superadmin-examination-panel">
+          <div className="superadmin-panel-heading">
             <h2>Grafik Pemeriksaan PSN</h2>
 
-            <div className="kasie-chart-legend">
+            <div className="superadmin-chart-legend">
               <span>
                 <i className="legend-free" /> Bebas jentik
               </span>
@@ -371,9 +371,9 @@ function KasieDashboard() {
       </section>
 
       {/* Temuan jentik dan jenis penampungan */}
-      <section className="kasie-panel kasie-findings-panel">
-        <div className="kasie-findings-left">
-          <div className="kasie-panel-heading">
+      <section className="superadmin-panel superadmin-findings-panel">
+        <div className="superadmin-findings-left">
+          <div className="superadmin-panel-heading">
             <div>
               <h2>Grafik Temuan Jentik</h2>
               <p>
@@ -384,7 +384,7 @@ function KasieDashboard() {
 
             <button
               type="button"
-              className="kasie-see-all"
+              className="superadmin-see-all"
               onClick={() =>
                 window.alert(
                   "Daftar temuan jentik akan dihubungkan ke halaman monitoring.",
@@ -395,28 +395,28 @@ function KasieDashboard() {
             </button>
           </div>
 
-          <h3 className="kasie-subheading">PERINGKAT TEMUAN PER RW</h3>
+          <h3 className="superadmin-subheading">PERINGKAT TEMUAN PER RW</h3>
 
-          <div className="kasie-ranking-list">
+          <div className="superadmin-ranking-list">
             {dataTemuan.map((item, index) => (
-              <div className="kasie-ranking-row" key={item.rw}>
-                <span className="kasie-ranking-number">{index + 1}</span>
+              <div className="superadmin-ranking-row" key={item.rw}>
+                <span className="superadmin-ranking-number">{index + 1}</span>
 
-                <span className="kasie-ranking-name">{item.rw}</span>
+                <span className="superadmin-ranking-name">{item.rw}</span>
 
-                <div className="kasie-ranking-track">
+                <div className="superadmin-ranking-track">
                   <div
-                    className={`kasie-ranking-progress ${item.status.toLowerCase()}`}
+                    className={`superadmin-ranking-progress ${item.status.toLowerCase()}`}
                     style={{ width: `${(item.jumlah / 38) * 100}%` }}
                   />
                 </div>
 
-                <strong className="kasie-ranking-value">{item.jumlah}</strong>
+                <strong className="superadmin-ranking-value">{item.jumlah}</strong>
 
-                <span className="kasie-ranking-percent">{item.persen}%</span>
+                <span className="superadmin-ranking-percent">{item.persen}%</span>
 
                 <span
-                  className={`kasie-ranking-status ${item.status.toLowerCase()}`}
+                  className={`superadmin-ranking-status ${item.status.toLowerCase()}`}
                 >
                   {item.status}
                 </span>
@@ -425,12 +425,12 @@ function KasieDashboard() {
           </div>
         </div>
 
-        <div className="kasie-findings-right">
-          <h3 className="kasie-subheading">JENIS TEMPAT PENAMPUNGAN</h3>
+        <div className="superadmin-findings-right">
+          <h3 className="superadmin-subheading">JENIS TEMPAT PENAMPUNGAN</h3>
 
-          <div className="kasie-donut-wrapper">
+          <div className="superadmin-donut-wrapper">
             <div
-              className="kasie-donut"
+              className="superadmin-donut"
               style={{
                 background: `conic-gradient(${dataTempat
                   .map((item, index) => {
@@ -442,16 +442,16 @@ function KasieDashboard() {
                   .join(", ")})`,
               }}
             >
-              <div className="kasie-donut-center">
+              <div className="superadmin-donut-center">
                 <strong>127</strong>
                 <span>temuan</span>
               </div>
             </div>
           </div>
 
-          <div className="kasie-donut-legend">
+          <div className="superadmin-donut-legend">
             {dataTempat.map((item) => (
-              <div className="kasie-donut-legend-row" key={item.nama}>
+              <div className="superadmin-donut-legend-row" key={item.nama}>
                 <span>
                   <i style={{ background: item.warna }} />
                   {item.nama}
@@ -466,14 +466,14 @@ function KasieDashboard() {
       </section>
 
       {/* Riwayat aktivitas */}
-      <section className="kasie-panel kasie-activity-panel">
-        <div className="kasie-activity-heading">
+      <section className="superadmin-panel superadmin-activity-panel">
+        <div className="superadmin-activity-heading">
           <div>
             <h2>Riwayat Aktivitas</h2>
             <p>Aktivitas terbaru pada sistem Monitoring PSN dan Jumantik.</p>
           </div>
 
-          <div className="kasie-activity-filters">
+          <div className="superadmin-activity-filters">
             {["Semua", "Pengguna baru", "Data pemeriksaan"].map((item) => (
               <button
                 type="button"
@@ -487,10 +487,10 @@ function KasieDashboard() {
           </div>
         </div>
 
-        <div className="kasie-activity-list">
+        <div className="superadmin-activity-list">
           {filteredAktivitas.map((item, index) => (
-            <div className="kasie-activity-row" key={index}>
-              <div className="kasie-activity-icon">
+            <div className="superadmin-activity-row" key={index}>
+              <div className="superadmin-activity-icon">
                 {item.tipe === "pengguna" ? (
                   <UserPlus size={18} />
                 ) : (
@@ -498,25 +498,25 @@ function KasieDashboard() {
                 )}
               </div>
 
-              <div className="kasie-activity-description">
+              <div className="superadmin-activity-description">
                 <strong>{item.judul}</strong>
                 <span>{item.keterangan}</span>
               </div>
 
               <span
-                className={`kasie-activity-badge ${
+                className={`superadmin-activity-badge ${
                   item.tipe === "pengguna" ? "user" : "data"
                 }`}
               >
                 {item.label}
               </span>
 
-              <span className="kasie-activity-time">{item.waktu}</span>
+              <span className="superadmin-activity-time">{item.waktu}</span>
             </div>
           ))}
 
           {filteredAktivitas.length === 0 && (
-            <div className="kasie-activity-empty">Belum ada aktivitas.</div>
+            <div className="superadmin-activity-empty">Belum ada aktivitas.</div>
           )}
         </div>
       </section>
@@ -524,4 +524,4 @@ function KasieDashboard() {
   );
 }
 
-export default KasieDashboard;
+export default SuperadminDashboard;

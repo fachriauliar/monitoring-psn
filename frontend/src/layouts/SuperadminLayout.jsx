@@ -1,5 +1,4 @@
-
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Map,
@@ -14,88 +13,111 @@ import {
   UserCircle,
   UserCog,
   Users,
-  ClipboardList
+  ClipboardList,
 } from "lucide-react";
+
+import { useAuth } from "../contexts/AuthContext";
 import "./layouts.css";
 
-export const kasieMenus = [
+export const superadminMenus = [
   {
     label: "Dashboard",
-    path: "/kasie/dashboard",
+    path: "/superadmin/dashboard",
     icon: LayoutDashboard,
   },
   {
     label: "Profil Saya",
-    path: "/kasie/profil",
+    path: "/superadmin/profil",
     icon: UserCircle,
   },
   {
     label: "Data Pengguna",
-    path: "/kasie/data-pengguna",
+    path: "/superadmin/data-pengguna",
     icon: UserCog,
   },
   {
     label: "Data Jumantik",
-    path: "/kasie/jumantik",
+    path: "/superadmin/jumantik",
     icon: Users,
   },
   {
     label: "Data Wilayah",
-    path: "/kasie/wilayah",
+    path: "/superadmin/wilayah",
     icon: Map,
   },
   {
     label: "Monitoring Pemeriksaan PSN",
-    path: "/kasie/monitoring-pemeriksaan",
+    path: "/superadmin/monitoring-pemeriksaan",
     icon: ClipboardList,
   },
   {
     label: "Rekapitulasi Pemeriksaan",
-    path: "/kasie/rekapitulasi",
+    path: "/superadmin/rekapitulasi",
     icon: ChartNoAxesCombined,
   },
   {
     label: "Evaluasi Tindak Lanjut",
-    path: "/kasie/evaluasi",
+    path: "/superadmin/evaluasi",
     icon: ClipboardCheck,
   },
   {
     label: "Wilayah Perhatian",
-    path: "/kasie/wilayah-perhatian",
+    path: "/superadmin/wilayah-perhatian",
     icon: AlertTriangle,
   },
   {
     label: "Laporan",
-    path: "/kasie/laporan",
+    path: "/superadmin/laporan",
     icon: FileBarChart,
   },
 ];
 
-export default function KasieLayout() {
+export default function SuperadminLayout() {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
+  const namaPengguna = user?.nama_lengkap || "Superadmin";
+
+  const inisial =
+    namaPengguna
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((kata) => kata.charAt(0))
+      .join("")
+      .toUpperCase() || "S";
+
   return (
     <div className="dashboard-layout">
+      {/* SIDEBAR */}
       <aside className="dashboard-sidebar">
         <div className="dashboard-sidebar-brand">
           <div className="dashboard-brand-icon">
             <ShieldCheck size={23} />
           </div>
+
           <div>
             <strong>Monitoring PSN</strong>
-            <span>Kasie Kesra</span>
+            <span>Superadmin Kesra</span>
           </div>
         </div>
 
         <div className="sidebar-section-label">MENU MONITORING</div>
 
         <nav className="dashboard-menu">
-          {kasieMenus.map((item) => {
+          {superadminMenus.map((item) => {
             const Icon = item.icon;
 
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path === "/kasie/dashboard"}
+                end={item.path === "/superadmin/dashboard"}
                 className={({ isActive }) =>
                   `dashboard-menu-link ${isActive ? "active" : ""}`
                 }
@@ -107,20 +129,31 @@ export default function KasieLayout() {
           })}
         </nav>
 
+        {/* LOGOUT */}
         <div className="sidebar-bottom">
-          <NavLink to="/login" className="dashboard-menu-link logout-link">
+          <button
+            type="button"
+            className="dashboard-menu-link logout-link"
+            onClick={handleLogout}
+          >
             <LogOut size={19} />
             <span>Keluar</span>
-          </NavLink>
+          </button>
         </div>
       </aside>
 
+      {/* KONTEN UTAMA */}
       <div className="dashboard-main">
         <header className="dashboard-topbar">
           <div className="topbar-left">
-            <button className="mobile-menu-button" aria-label="Buka menu">
+            <button
+              type="button"
+              className="mobile-menu-button"
+              aria-label="Buka menu"
+            >
               <Menu size={21} />
             </button>
+
             <div>
               <strong>Panel Monitoring</strong>
               <span>Kelurahan Srengseng Sawah</span>
@@ -128,14 +161,20 @@ export default function KasieLayout() {
           </div>
 
           <div className="topbar-right">
-            <button className="topbar-icon-button" aria-label="Notifikasi">
+            <button
+              type="button"
+              className="topbar-icon-button"
+              aria-label="Notifikasi"
+            >
               <Bell size={19} />
             </button>
+
             <div className="topbar-user">
-              <div className="user-avatar">K</div>
+              <div className="user-avatar">{inisial}</div>
+
               <div>
-                <strong>Kasie Kesra</strong>
-                <span>Evaluator</span>
+                <strong>{namaPengguna}</strong>
+                <span>Superadmin Kesra</span>
               </div>
             </div>
           </div>

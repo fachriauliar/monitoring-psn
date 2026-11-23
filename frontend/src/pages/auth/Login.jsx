@@ -1,14 +1,17 @@
-
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+
+import { useAuth } from "../../contexts/AuthContext";
 import logoJakarta from "../../assets/images/Logo-Jakarta-Selatan.png";
+
 import "./AuthPages.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-function Login({ onLogin }) {
+function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,81 +19,73 @@ function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // =======================================================
+  // PROSES LOGIN
+  // =======================================================
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          password,
-        }),
-      });
+      const result = await login(email.trim(), password);
 
-      const result = await response.json();
+      const user = result.user;
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Email atau kata sandi tidak sesuai.");
-      }
-
-      const user = result.data.user;
-      const token = result.data.token;
-
-      // Simpan token dan data pengguna
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-
-      // Jalankan callback jika disediakan oleh App
-      if (onLogin) {
-        await onLogin({
-          success: true,
-          user,
-          token,
-          wajib_ubah_password: user.wajib_ubah_password,
+      // Pengguna wajib mengganti password terlebih dahulu.
+      if (result.wajib_ubah_password) {
+        navigate("/ubah-password", {
+          replace: true,
         });
-      }
 
-      // Pengguna dengan password sementara wajib menggantinya
-      if (user.wajib_ubah_password) {
-        navigate("/ubah-password", { replace: true });
         return;
       }
 
-      // Arahkan berdasarkan role
-      switch (user.role) {
-        case "admin":
-          navigate("/admin/dashboard", { replace: true });
-          break;
+      // Menentukan dashboard berdasarkan role.
+      const dashboard =
+        user.role === "superadmin"
+          ? "/superadmin/dashboard"
+          : user.role === "admin"
+            ? "/admin/dashboard"
+            : null;
 
-        case "kasie":
-          navigate("/kasie/dashboard", { replace: true });
-          break;
-
-        default:
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          setError("Role akun tidak dikenali.");
+      if (!dashboard) {
+        throw new Error("Role akun tidak dikenali.");
       }
+
+      // Mengarahkan pengguna ke halaman sebelumnya
+      // jika halaman tersebut sesuai dengan role pengguna.
+      const previousPath = location.state?.from?.pathname;
+
+      const allowedPreviousPath =
+        user.role === "admin"
+          ? previousPath?.startsWith("/admin/")
+          : previousPath?.startsWith("/superadmin/");
+
+      navigate(allowedPreviousPath ? previousPath : dashboard, {
+        replace: true,
+      });
     } catch (err) {
       setError(
-        err.message || "Tidak dapat terhubung ke server. Silakan coba lagi."
+        err.message || "Tidak dapat terhubung ke server. Silakan coba lagi.",
       );
     } finally {
       setLoading(false);
     }
   };
 
+  // =======================================================
+  // TAMPILAN LOGIN
+  // =======================================================
+
   return (
     <main className="auth-page">
       <section className="auth-brand-panel">
         <div className="auth-brand">
           <img src={logoJakarta} alt="Logo Jakarta Selatan" />
+
           <div>
             <b>Kelurahan Srengseng Sawah</b>
             <b>Kota Jakarta Selatan</b>
@@ -99,6 +94,7 @@ function Login({ onLogin }) {
 
         <div className="auth-brand-content">
           <span>Selamat datang kembali</span>
+
           <h2>Masuk untuk mengakses layanan kelurahan kapan saja</h2>
         </div>
       </section>
@@ -112,6 +108,7 @@ function Login({ onLogin }) {
           </p>
 
           <form onSubmit={handleSubmit}>
+            {/* EMAIL */}
             <div className="auth-input-group">
               <input
                 type="email"
@@ -124,6 +121,7 @@ function Login({ onLogin }) {
               />
             </div>
 
+            {/* PASSWORD */}
             <div className="auth-input-group auth-password-group">
               <input
                 type={showPassword ? "text" : "password"}
@@ -138,17 +136,26 @@ function Login({ onLogin }) {
               <button
                 type="button"
                 className="auth-eye-button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((prev) => !prev)}
                 aria-label={
-                  showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
+                  showPassword
+                    ? "Sembunyikan kata sandi"
+                    : "Tampilkan kata sandi"
                 }
+                disabled={loading}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
 
-            {error && <p className="auth-error">{error}</p>}
+            {/* ERROR */}
+            {error && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
 
+            {/* SUBMIT */}
             <button
               type="submit"
               className="auth-submit-button"
@@ -159,7 +166,7 @@ function Login({ onLogin }) {
           </form>
 
           <p className="auth-help-text">
-            Lupa kata sandi? Silakan hubungi Kasie Kesra untuk melakukan reset
+            Lupa kata sandi? Silakan hubungi Superadmin untuk melakukan reset
             kata sandi akun Anda.
           </p>
         </div>

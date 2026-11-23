@@ -178,7 +178,7 @@ function Profile() {
   function getRoleLabel(value) {
     const roles = {
       admin: "ADMIN KELURAHAN",
-      kasie: "KASIE KESRA",
+      superadmin: "SUPERADMIN",
     };
 
     return roles[value] || "PENGGUNA";

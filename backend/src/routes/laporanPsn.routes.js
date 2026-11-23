@@ -1,30 +1,21 @@
-const express = require("express");
-
-const router = express.Router();
+const router = require("express").Router();
 
 const authenticate = require("../middlewares/authenticate");
+const authorize = require("../middlewares/authorize");
+const requirePasswordChanged = require("../middlewares/requirePasswordChanged");
 
 const {
   getLaporanPsn,
   syncLaporanPsn,
 } = require("../controllers/laporanPsn.controller");
 
-// Semua endpoint membutuhkan login.
-router.use(authenticate);
+// Semua endpoint membutuhkan login dan perubahan password awal.
+router.use(authenticate, requirePasswordChanged);
 
-// Hanya Admin Kelurahan dan Kasie Kesra.
-router.use((req, res, next) => {
-  if (!["admin", "kasie"].includes(req.user.role)) {
-    return res.status(403).json({
-      success: false,
-      message: "Anda tidak memiliki akses ke data pemeriksaan PSN.",
-    });
-  }
+// Hanya Admin dan Superadmin.
+router.use(authorize("admin", "superadmin"));
 
-  next();
-});
-
-// Mengambil data dari PostgreSQL.
+// Mengambil data pemeriksaan PSN.
 router.get("/", getLaporanPsn);
 
 // Sinkronisasi Google Sheets ke PostgreSQL.

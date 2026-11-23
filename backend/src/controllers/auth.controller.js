@@ -7,6 +7,7 @@ async function login(req, res, next) {
     const email = String(req.body.email || "")
       .trim()
       .toLowerCase();
+
     const password = String(req.body.password || "");
 
     if (!email || !password) {
@@ -17,8 +18,14 @@ async function login(req, res, next) {
     }
 
     const result = await query(
-      `SELECT id_pengguna, nama_lengkap, email, role, status_akun,
-              wajib_ubah_password, password_hash
+      `SELECT
+        id_pengguna,
+        nama_lengkap,
+        email,
+        role,
+        status_akun,
+        wajib_ubah_password,
+        password_hash
        FROM pengguna
        WHERE LOWER(email) = LOWER($1)`,
       [email],
@@ -36,13 +43,21 @@ async function login(req, res, next) {
     if (user.status_akun !== "aktif") {
       return res.status(403).json({
         success: false,
-        message: "Akun tidak aktif. Hubungi Kasie Kesra.",
+        message: "Akun tidak aktif. Hubungi Superadmin.",
+      });
+    }
+
+    if (!["admin", "superadmin"].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Role akun tidak memiliki akses.",
       });
     }
 
     const token = jwt.sign(
       {
         id_pengguna: user.id_pengguna,
+        email: user.email,
         role: user.role,
       },
       process.env.JWT_SECRET,
@@ -66,7 +81,10 @@ async function login(req, res, next) {
   }
 }
 
-// Mengambil informasi pengguna yang sedang login
+// =========================================================
+// MENGAMBIL DATA PENGGUNA YANG SEDANG LOGIN
+// =========================================================
+
 async function me(req, res) {
   return res.json({
     success: true,
@@ -75,85 +93,93 @@ async function me(req, res) {
   });
 }
 
-// Mengubah password pengguna yang sedang login
+// =========================================================
+// MENGUBAH PASSWORD PENGGUNA
+// =========================================================
 
 async function changePassword(req, res, next) {
   try {
     const idPengguna = req.user.id_pengguna;
 
-    const {
-      password_lama,
-      password_baru,
-      konfirmasi_password,
-    } = req.body;
+    const passwordLama = String(req.body.password_lama || "");
+    const passwordBaru = String(req.body.password_baru || "");
+    const konfirmasiPassword = String(req.body.konfirmasi_password || "");
 
-    // Validasi konfirmasi password
-    if (password_baru !== konfirmasi_password) {
+    if (!passwordLama || !passwordBaru || !konfirmasiPassword) {
       return res.status(400).json({
         success: false,
-        message: "Konfirmasi kata sandi tidak sesuai.",
+        message: "Semua kolom password wajib diisi.",
       });
     }
 
-    // Ambil password dari database
+    if (passwordBaru.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "Password baru minimal 8 karakter.",
+      });
+    }
+
+    if (passwordBaru !== konfirmasiPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Konfirmasi password tidak sesuai.",
+      });
+    }
+
     const result = await query(
-      `SELECT id_pengguna, password_hash
+      `SELECT password_hash
        FROM pengguna
        WHERE id_pengguna = $1`,
-      [idPengguna]
+      [idPengguna],
     );
 
-    const user = result.rows[0];
-
-    if (!user) {
+    if (!result.rowCount) {
       return res.status(404).json({
         success: false,
         message: "Pengguna tidak ditemukan.",
       });
     }
 
-    // Periksa password lama
     const passwordValid = await bcrypt.compare(
-      password_lama,
-      user.password_hash
+      passwordLama,
+      result.rows[0].password_hash,
     );
 
     if (!passwordValid) {
       return res.status(400).json({
         success: false,
-        message: "Kata sandi saat ini tidak sesuai.",
+        message: "Password lama tidak sesuai.",
       });
     }
 
-    // Pastikan password baru berbeda
     const samePassword = await bcrypt.compare(
-      password_baru,
-      user.password_hash
+      passwordBaru,
+      result.rows[0].password_hash,
     );
 
     if (samePassword) {
       return res.status(400).json({
         success: false,
-        message: "Kata sandi baru harus berbeda dari sebelumnya.",
+        message: "Password baru harus berbeda dari password lama.",
       });
     }
 
-    // Hash password baru
-    const passwordHash = await bcrypt.hash(password_baru, 12);
+    const rounds = Number(process.env.BCRYPT_ROUNDS || 12);
 
-    // Update password
+    const passwordHash = await bcrypt.hash(passwordBaru, rounds);
+
     await query(
       `UPDATE pengguna
        SET password_hash = $1,
            wajib_ubah_password = FALSE,
-           updated_at = CURRENT_TIMESTAMP
+           updated_at = NOW()
        WHERE id_pengguna = $2`,
-      [passwordHash, idPengguna]
+      [passwordHash, idPengguna],
     );
 
     return res.json({
       success: true,
-      message: "Kata sandi berhasil diperbarui.",
+      message: "Password berhasil diperbarui.",
     });
   } catch (error) {
     next(error);

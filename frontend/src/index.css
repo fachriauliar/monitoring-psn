@@ -1,0 +1,17 @@
+.auth-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #52645a;
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-loading a {
+  color: #258052;
+  text-decoration: none;
+}
+

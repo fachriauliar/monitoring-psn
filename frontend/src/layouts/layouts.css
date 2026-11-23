@@ -260,7 +260,7 @@
 }
 
 /* ================================
-   ADMIN & KASIE DASHBOARD
+   ADMIN & SUPERADMIN DASHBOARD
 ================================ */
 
 .dashboard-layout {
@@ -468,6 +468,19 @@
 
 .mobile-menu-button {
   display: none;
+}
+
+button.dashboard-menu-link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.dashboard-menu-link:hover {
+  background: var(--sidebar-hover, #f1f5f9);
 }
 
 /* ================================
