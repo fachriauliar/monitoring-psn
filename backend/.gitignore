@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage/
+
+# Build output
+dist/
+build/
+
+# Cache
+.cache/
+.npm/
+.eslintcache
+.parcel-cache/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.orig
+
+# Temporary files
+tmp/
+temp/
+
+# Debug
+.nyc_output/
+
+# Local database and backup files
+*.sql
+*.dump
+*.bak
+*.backup
+
+# Certificates and private keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Google credentials
+credentials/
+google-service-account.json
