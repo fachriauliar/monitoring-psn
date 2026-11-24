@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+
 import {
   LayoutDashboard,
   Map,
@@ -11,6 +13,7 @@ import {
   FileBarChart,
   Bell,
   Menu,
+  X,
   LogOut,
   ShieldCheck,
   UserCircle,
@@ -76,10 +79,45 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const handleLogout = () => {
+    setSidebarOpen(false);
     logout();
     navigate("/login", { replace: true });
   };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
+  // Tutup sidebar menggunakan tombol Escape.
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        closeSidebar();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  // Mencegah scroll halaman ketika drawer terbuka.
+  useEffect(() => {
+    if (sidebarOpen && window.innerWidth <= 520) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
 
   const namaPengguna = user?.nama_lengkap || "Administrator";
 
@@ -94,8 +132,19 @@ export default function AdminLayout() {
 
   return (
     <div className="dashboard-layout">
+      {/* OVERLAY MOBILE */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={closeSidebar}
+          aria-hidden="true"
+        />
+      )}
+
       {/* SIDEBAR */}
-      <aside className="dashboard-sidebar">
+      <aside
+        className={`dashboard-sidebar ${sidebarOpen ? "sidebar-open" : ""}`}
+      >
         <div className="dashboard-sidebar-brand">
           <div className="dashboard-brand-icon">
             <ShieldCheck size={23} />
@@ -105,6 +154,16 @@ export default function AdminLayout() {
             <strong>Monitoring PSN</strong>
             <span>Admin Kelurahan</span>
           </div>
+
+          {/* Tombol tutup khusus mobile */}
+          <button
+            type="button"
+            className="sidebar-close-button"
+            onClick={closeSidebar}
+            aria-label="Tutup menu"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         <div className="sidebar-section-label">MENU UTAMA</div>
@@ -118,6 +177,7 @@ export default function AdminLayout() {
                 key={item.path}
                 to={item.path}
                 end={item.path === "/admin/dashboard"}
+                onClick={closeSidebar}
                 className={({ isActive }) =>
                   `dashboard-menu-link ${isActive ? "active" : ""}`
                 }
@@ -149,9 +209,11 @@ export default function AdminLayout() {
             <button
               type="button"
               className="mobile-menu-button"
-              aria-label="Buka menu"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-label={sidebarOpen ? "Tutup menu" : "Buka menu"}
+              aria-expanded={sidebarOpen}
             >
-              <Menu size={21} />
+              {sidebarOpen ? <X size={21} /> : <Menu size={21} />}
             </button>
 
             <div>

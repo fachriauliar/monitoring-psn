@@ -1,5 +1,8 @@
-import { Link, Outlet } from "react-router-dom";
-import { MapPin, Phone, Mail } from "lucide-react";
+
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet } from "react-router-dom";
+
+import { MapPin, Phone, Mail, Menu, X } from "lucide-react";
 
 import {
   FaFacebookF,
@@ -11,13 +14,49 @@ import {
 import logoJakarta from "../assets/images/Logo-Jakarta-Selatan.png";
 import "./layouts.css";
 
+const publicMenus = [
+  { label: "Beranda", path: "/" },
+  { label: "Profil Kelurahan", path: "/profil-kelurahan" },
+  { label: "Peta Sebaran", path: "/peta-sebaran" },
+  { label: "Hasil Pemantauan", path: "/hasil-pemantauan" },
+  { label: "Edukasi", path: "/edukasi" },
+  { label: "Berita", path: "/berita" },
+];
+
 export default function PublicLayout() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") closeMenu();
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+
+  useEffect(() => {
+    if (menuOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+  }, [menuOpen]);
+
+  useEffect(() => {
+    closeMenu();
+  }, [window.location.pathname]);
+
   return (
     <div className="public-layout">
-      {/* HEADER */}
       <header className="public-header">
         <div className="public-header-inner">
-          <Link to="/" className="public-brand">
+          <Link to="/" className="public-brand" onClick={closeMenu}>
             <img src={logoJakarta} alt="Logo Jakarta Selatan" />
 
             <div>
@@ -26,30 +65,80 @@ export default function PublicLayout() {
             </div>
           </Link>
 
-          <nav className="public-nav">
-            <Link to="/">Beranda</Link>
-            <Link to="/profil-kelurahan">Profil Kelurahan</Link>
-            <Link to="/peta-sebaran">Peta Sebaran</Link>
-            <Link to="/hasil-pemantauan">Hasil Pemantauan</Link>
-            <Link to="/edukasi">Edukasi</Link>
-            <Link to="/berita">Berita</Link>
+          <nav className="public-nav" aria-label="Navigasi utama">
+            {publicMenus.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === "/"}
+              >
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
 
-          <Link to="/login" className="public-login-button">
+          <Link
+            to="/login"
+            className="public-login-button"
+            onClick={closeMenu}
+          >
             Masuk
           </Link>
+
+          <button
+            type="button"
+            className="public-menu-button"
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label={menuOpen ? "Tutup navigasi" : "Buka navigasi"}
+            aria-expanded={menuOpen}
+            aria-controls="public-mobile-nav"
+          >
+            {menuOpen ? <X size={23} /> : <Menu size={23} />}
+          </button>
         </div>
+
+        {menuOpen && (
+          <div
+            className="public-menu-overlay"
+            onClick={closeMenu}
+            aria-hidden="true"
+          />
+        )}
+
+        <nav
+          id="public-mobile-nav"
+          className={`public-mobile-nav ${menuOpen ? "open" : ""}`}
+          aria-label="Navigasi mobile"
+          aria-hidden={!menuOpen}
+          inert={!menuOpen}
+        >
+          {publicMenus.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/"}
+              onClick={closeMenu}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+
+          <Link
+            to="/login"
+            className="mobile-login-link"
+            onClick={closeMenu}
+          >
+            Masuk ke Dashboard
+          </Link>
+        </nav>
       </header>
 
-      {/* KONTEN HALAMAN */}
       <main className="public-main">
         <Outlet />
       </main>
 
-      {/* FOOTER */}
       <footer className="footer">
         <div className="footer-inner">
-          {/* BRAND */}
           <div className="footer-brand">
             <img
               src={logoJakarta}
@@ -68,23 +157,19 @@ export default function PublicLayout() {
             </div>
           </div>
 
-          {/* NAVIGASI */}
           <div>
             <b>Navigasi</b>
-
             <Link to="/">Beranda</Link>
             <Link to="/peta-sebaran">Peta Sebaran</Link>
             <Link to="/hasil-pemantauan">Hasil Pemantauan</Link>
             <Link to="/jadwal-kegiatan">Jadwal Kegiatan</Link>
           </div>
 
-          {/* INFORMASI KONTAK */}
           <div className="footer-contact">
             <b>Informasi Kontak</b>
 
             <div className="contact-item">
               <MapPin size={15} />
-
               <p>
                 Kelurahan Srengseng Sawah, Kecamatan Jagakarsa, Kota
                 Administrasi Jakarta Selatan, DKI Jakarta.
@@ -93,18 +178,17 @@ export default function PublicLayout() {
 
             <div className="contact-item">
               <Phone size={15} />
-
               <a href="tel:+6221XXXXXXXX">+62 21 XXXX XXXX</a>
             </div>
 
             <div className="contact-item">
               <Mail size={15} />
-
-              <a href="mailto:email@kelurahan.go.id">email@kelurahan.go.id</a>
+              <a href="mailto:email@kelurahan.go.id">
+                email@kelurahan.go.id
+              </a>
             </div>
           </div>
 
-          {/* MEDIA SOSIAL */}
           <div className="footer-social">
             <b>Ikuti Kami</b>
 
@@ -148,7 +232,6 @@ export default function PublicLayout() {
           </div>
         </div>
 
-        {/* COPYRIGHT */}
         <div className="copyright">
           © 2026 Kelurahan Srengseng Sawah · Prototype Monitoring PSN
         </div>

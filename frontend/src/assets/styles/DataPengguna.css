@@ -1,3 +1,7 @@
+/* =====================================================
+   DATA PENGGUNA
+===================================================== */
+
 .data-pengguna {
   width: 100%;
   min-height: calc(100vh - 70px);
@@ -5,13 +9,18 @@
   color: #172033;
   font-family: "Inter", Arial, sans-serif;
   box-sizing: border-box;
+  min-width: 0;
 }
 
-.data-pengguna * {
+.data-pengguna *,
+.data-pengguna *::before,
+.data-pengguna *::after {
   box-sizing: border-box;
 }
 
-/* HEADER */
+/* =====================================================
+   HEADER
+===================================================== */
 
 .pengguna-header {
   display: flex;
@@ -21,41 +30,53 @@
   margin-bottom: 22px;
 }
 
+.pengguna-header > div {
+  min-width: 0;
+}
+
 .pengguna-header h1 {
   margin: 0 0 7px;
   font-size: 22px;
   font-weight: 750;
   color: #142033;
+  line-height: 1.4;
 }
 
 .pengguna-header p {
   margin: 0;
   color: #748092;
   font-size: 12px;
+  line-height: 1.6;
 }
 
 .btn-tambah-pengguna {
-  height: 39px;
+  min-height: 39px;
   padding: 0 15px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  flex-shrink: 0;
+
   border: none;
   border-radius: 7px;
   background: #078b45;
   color: white;
+
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.2s ease;
 }
 
 .btn-tambah-pengguna:hover {
   background: #06783c;
 }
 
-/* STATISTIK */
+/* =====================================================
+   STATISTIK
+===================================================== */
 
 .pengguna-statistik {
   display: grid;
@@ -65,12 +86,15 @@
 }
 
 .pengguna-statistik-card {
+  min-width: 0;
   min-height: 91px;
   padding: 16px;
+
   display: flex;
   align-items: center;
   gap: 13px;
-  background: white;
+
+  background: #ffffff;
   border: 1px solid #e0e9e9;
   border-radius: 11px;
   box-shadow: 0 2px 5px #173b4a0a;
@@ -105,66 +129,90 @@
   background: #dff8e8;
 }
 
+.pengguna-statistik-card > div:last-child {
+  min-width: 0;
+}
+
 .pengguna-statistik-card span {
   display: block;
-  font-size: 11px;
-  color: #748092;
   margin-bottom: 5px;
+  color: #748092;
+  font-size: 11px;
+  line-height: 1.4;
 }
 
 .pengguna-statistik-card h2 {
   margin: 0;
+  color: #172033;
   font-size: 23px;
   font-weight: 750;
-  color: #172033;
+  line-height: 1.3;
 }
 
-/* TABLE CONTAINER */
+/* =====================================================
+   TABLE CONTAINER
+===================================================== */
 
 .pengguna-table-container {
-  background: white;
+  width: 100%;
+  min-width: 0;
+  padding: 19px;
+
+  background: #ffffff;
   border: 1px solid #e0e9e9;
   border-radius: 12px;
   box-shadow: 0 2px 5px #173b4a0a;
-  padding: 19px;
 }
 
 .pengguna-table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 17px;
+}
+
+.pengguna-table-header > div {
+  min-width: 0;
 }
 
 .pengguna-table-header h2 {
   margin: 0 0 5px;
   font-size: 15px;
   font-weight: 700;
+  color: #172033;
 }
 
 .pengguna-table-header p {
   margin: 0;
   color: #84909e;
   font-size: 11px;
+  line-height: 1.5;
 }
 
 .btn-refresh-pengguna {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
+
   display: grid;
   place-items: center;
+
   border: 1px solid #dce5e8;
   border-radius: 7px;
-  background: white;
+  background: #ffffff;
   color: #078b45;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
 .btn-refresh-pengguna:hover {
   background: #e9f8ef;
 }
 
-/* FILTER */
+/* =====================================================
+   FILTER
+===================================================== */
 
 .pengguna-filter {
   display: flex;
@@ -177,18 +225,22 @@
   height: 38px;
   flex: 1;
   min-width: 180px;
+
   display: flex;
   align-items: center;
   gap: 9px;
+
   padding: 0 11px;
+
   border: 1px solid #dce5e8;
   border-radius: 7px;
   color: #8995a3;
-  background: white;
+  background: #ffffff;
 }
 
 .pengguna-search input {
   width: 100%;
+  min-width: 0;
   border: none;
   outline: none;
   color: #172033;
@@ -204,30 +256,39 @@
   height: 38px;
   min-width: 145px;
   padding: 0 10px;
+
   border: 1px solid #dce5e8;
   border-radius: 7px;
   outline: none;
-  background: white;
+
+  background: #ffffff;
   color: #475569;
   font-size: 11px;
   cursor: pointer;
 }
 
-/* NOTIFICATION */
+/* =====================================================
+   NOTIFICATION
+===================================================== */
 
 .pengguna-notice {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+
   padding: 10px 12px;
   margin-bottom: 14px;
+
   border-radius: 7px;
   background: #e4f7e9;
   color: #078b45;
   font-size: 11px;
+  line-height: 1.5;
 }
 
 .pengguna-notice button {
+  flex-shrink: 0;
   border: none;
   background: transparent;
   color: #078b45;
@@ -235,11 +296,15 @@
   cursor: pointer;
 }
 
-/* TABLE */
+/* =====================================================
+   TABLE
+===================================================== */
 
 .pengguna-table-wrapper {
   width: 100%;
+  min-width: 0;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pengguna-table {
@@ -255,14 +320,17 @@
 .pengguna-table th {
   padding: 13px 12px;
   text-align: left;
+
   color: #647184;
   font-size: 10px;
   font-weight: 650;
+
   border-bottom: 1px solid #e6edef;
 }
 
 .pengguna-table td {
   padding: 12px;
+
   border-bottom: 1px solid #edf1f2;
   color: #536174;
   font-size: 10px;
@@ -271,6 +339,10 @@
 .pengguna-table tbody tr:hover {
   background: #fbfdfc;
 }
+
+/* =====================================================
+   USER NAME & AVATAR
+===================================================== */
 
 .pengguna-name {
   display: flex;
@@ -287,15 +359,19 @@
 .pengguna-avatar {
   width: 30px;
   height: 30px;
+  flex-shrink: 0;
+
   display: grid;
   place-items: center;
+
   border-radius: 50%;
   background: #e4f7e9;
   color: #078b45;
-  flex-shrink: 0;
 }
 
-/* ROLE */
+/* =====================================================
+   ROLE
+===================================================== */
 
 .pengguna-role {
   display: inline-block;
@@ -315,14 +391,18 @@
   color: #9847d2;
 }
 
-/* STATUS */
+/* =====================================================
+   STATUS
+===================================================== */
 
 .pengguna-status {
   display: inline-block;
   min-width: 62px;
-  text-align: center;
   padding: 5px 9px;
+
+  text-align: center;
   border-radius: 20px;
+
   font-size: 9px;
   font-weight: 650;
   text-transform: capitalize;
@@ -343,7 +423,9 @@
   color: #c9283e;
 }
 
-/* ACTION */
+/* =====================================================
+   ACTION
+===================================================== */
 
 .pengguna-actions {
   display: flex;
@@ -354,12 +436,15 @@
 .pengguna-actions button {
   width: 29px;
   height: 29px;
+  flex-shrink: 0;
+
   display: grid;
   place-items: center;
+
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.2s ease;
 }
 
 .pengguna-action-edit {
@@ -390,15 +475,18 @@
 }
 
 .pengguna-action-reset {
+  width: 34px;
+  height: 34px;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+
   border: none;
   border-radius: 7px;
   background: #fff7ed;
   color: #ea580c;
+
   cursor: pointer;
   transition: 0.2s ease;
 }
@@ -413,7 +501,9 @@
   cursor: not-allowed;
 }
 
-/* EMPTY DATA */
+/* =====================================================
+   EMPTY DATA
+===================================================== */
 
 .pengguna-empty {
   height: 100px;
@@ -421,15 +511,20 @@
   color: #8995a3 !important;
 }
 
-/* FOOTER */
+/* =====================================================
+   TABLE FOOTER
+===================================================== */
 
 .pengguna-table-footer {
   padding-top: 14px;
   color: #84909e;
   font-size: 10px;
+  line-height: 1.5;
 }
 
-/* RESPONSIVE */
+/* =====================================================
+   RESPONSIVE: TABLET BESAR
+===================================================== */
 
 @media (max-width: 1050px) {
   .pengguna-statistik {
@@ -445,51 +540,220 @@
   }
 }
 
-@media (max-width: 600px) {
-  .data-pengguna {
-    padding: 15px;
+/* =====================================================
+   RESPONSIVE: TABLET
+===================================================== */
+
+@media (max-width: 760px) {
+  .pengguna-header {
+    gap: 12px;
   }
 
+  .pengguna-header h1 {
+    font-size: 20px;
+  }
+
+  .pengguna-statistik {
+    gap: 11px;
+  }
+
+  .pengguna-statistik-card {
+    min-height: 85px;
+    padding: 13px;
+    gap: 10px;
+  }
+
+  .pengguna-statistik-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .pengguna-statistik-card h2 {
+    font-size: 21px;
+  }
+
+  .pengguna-table-container {
+    padding: 16px;
+  }
+
+  .pengguna-table th,
+  .pengguna-table td {
+    padding: 11px 10px;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE: MOBILE
+===================================================== */
+
+@media (max-width: 520px) {
   .pengguna-header {
     align-items: flex-start;
     flex-direction: column;
+    gap: 13px;
+    margin-bottom: 18px;
+  }
+
+  .pengguna-header h1 {
+    font-size: 18px;
+  }
+
+  .pengguna-header p {
+    font-size: 11px;
   }
 
   .btn-tambah-pengguna {
     width: 100%;
+    min-height: 38px;
   }
 
   .pengguna-statistik {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
+    margin-bottom: 16px;
   }
 
   .pengguna-statistik-card {
-    padding: 11px;
+    min-height: 78px;
+    padding: 10px;
     gap: 8px;
   }
 
   .pengguna-statistik-icon {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+
+  .pengguna-statistik-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .pengguna-statistik-card span {
+    font-size: 10px;
+    margin-bottom: 4px;
   }
 
   .pengguna-statistik-card h2 {
     font-size: 19px;
   }
 
+  .pengguna-table-container {
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .pengguna-table-header {
+    margin-bottom: 14px;
+  }
+
+  .pengguna-table-header h2 {
+    font-size: 13px;
+  }
+
+  .pengguna-table-header p {
+    font-size: 10px;
+  }
+
   .pengguna-filter {
     align-items: stretch;
     flex-direction: column;
+    gap: 9px;
+    margin-bottom: 14px;
+  }
+
+  .pengguna-search {
+    width: 100%;
+    min-width: 0;
+    flex-basis: auto;
+    height: 37px;
+  }
+
+  .pengguna-filter select {
+    width: 100%;
+    min-width: 0;
+    height: 37px;
+  }
+
+  .pengguna-notice {
+    align-items: flex-start;
+    font-size: 10px;
+  }
+
+  .pengguna-table th,
+  .pengguna-table td {
+    padding: 10px;
+    font-size: 10px;
+  }
+
+  .pengguna-table-footer {
+    font-size: 9px;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE: MOBILE SANGAT KECIL
+===================================================== */
+
+@media (max-width: 360px) {
+  .pengguna-header h1 {
+    font-size: 17px;
+  }
+
+  .pengguna-header p {
+    font-size: 10px;
+  }
+
+  .pengguna-statistik {
+    gap: 7px;
+  }
+
+  .pengguna-statistik-card {
+    min-height: 70px;
+    padding: 8px;
+    gap: 7px;
+  }
+
+  .pengguna-statistik-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .pengguna-statistik-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .pengguna-statistik-card span {
+    font-size: 9px;
+  }
+
+  .pengguna-statistik-card h2 {
+    font-size: 17px;
+  }
+
+  .pengguna-table-container {
+    padding: 10px;
+  }
+
+  .pengguna-table-header h2 {
+    font-size: 12px;
+  }
+
+  .btn-refresh-pengguna {
+    width: 32px;
+    height: 32px;
   }
 
   .pengguna-search,
   .pengguna-filter select {
-    width: 100%;
-    flex-basis: auto;
+    height: 35px;
+    font-size: 10px;
   }
 
-  .pengguna-table-container {
-    padding: 12px;
+  .pengguna-table th,
+  .pengguna-table td {
+    padding: 9px;
   }
 }

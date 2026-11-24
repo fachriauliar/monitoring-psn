@@ -1,10 +1,27 @@
+/* =====================================================
+   FORM PENGGUNA
+===================================================== */
+
 .form-pengguna {
+  width: 100%;
   min-height: 100%;
   padding: 28px;
   background: #f3faf9;
   color: #243b35;
   font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+  min-width: 0;
 }
+
+.form-pengguna *,
+.form-pengguna *::before,
+.form-pengguna *::after {
+  box-sizing: border-box;
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
 
 .form-pengguna-header {
   display: flex;
@@ -14,32 +31,49 @@
   margin-bottom: 24px;
 }
 
+.form-pengguna-header > div {
+  min-width: 0;
+}
+
 .form-pengguna-header h1 {
   margin: 0 0 8px;
   color: #183c31;
   font-size: 25px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
 .form-pengguna-header p {
   margin: 0;
   color: #788b83;
   font-size: 13px;
+  line-height: 1.6;
 }
+
+/* =====================================================
+   BUTTON KEMBALI
+===================================================== */
 
 .btn-kembali-pengguna {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 16px;
+  flex-shrink: 0;
+
+  min-height: 40px;
+  padding: 0 16px;
+
   border: 1px solid #dce8e2;
   border-radius: 9px;
-  background: #fff;
+  background: #ffffff;
   color: #496258;
+
+  font-family: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: 0.2s;
 }
 
@@ -48,13 +82,24 @@
   color: #078b45;
 }
 
+/* =====================================================
+   FORM CONTAINER
+===================================================== */
+
 .form-pengguna-container {
+  width: 100%;
+  min-width: 0;
   padding: 26px;
+
   border: 1px solid #e7efeb;
   border-radius: 14px;
-  background: #fff;
+  background: #ffffff;
   box-shadow: 0 3px 14px rgba(30, 75, 55, 0.04);
 }
+
+/* =====================================================
+   SECTION HEADER
+===================================================== */
 
 .form-pengguna-section-header {
   margin-bottom: 22px;
@@ -65,13 +110,19 @@
   color: #24483a;
   font-size: 17px;
   font-weight: 700;
+  line-height: 1.4;
 }
 
 .form-pengguna-section-header p {
   margin: 0;
   color: #899991;
   font-size: 12px;
+  line-height: 1.6;
 }
+
+/* =====================================================
+   FORM GRID
+===================================================== */
 
 .form-pengguna-grid {
   display: grid;
@@ -83,12 +134,14 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
+  min-width: 0;
 }
 
 .form-pengguna-group label {
   color: #40584e;
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.5;
 }
 
 .form-pengguna-group label span {
@@ -98,15 +151,19 @@
 .form-pengguna-group input,
 .form-pengguna-group select {
   width: 100%;
+  min-width: 0;
   min-height: 43px;
   padding: 0 13px;
+
   border: 1px solid #dfe9e4;
   border-radius: 8px;
   outline: none;
-  background: #fff;
+
+  background: #ffffff;
   color: #344b41;
   font-family: inherit;
   font-size: 12px;
+
   transition: 0.2s;
 }
 
@@ -120,27 +177,44 @@
   box-shadow: 0 0 0 3px rgba(7, 139, 69, 0.08);
 }
 
+/* =====================================================
+   PASSWORD SECTION
+===================================================== */
+
 .password-section {
   margin-top: 32px;
   padding-top: 25px;
   border-top: 1px solid #edf2ef;
 }
 
+/* =====================================================
+   ERROR MESSAGE
+===================================================== */
+
 .form-pengguna-error {
   margin-bottom: 20px;
   padding: 12px 15px;
+
   border: 1px solid #f3caca;
   border-radius: 8px;
   background: #fff3f3;
   color: #c03939;
+
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
+
+/* =====================================================
+   FORM FOOTER
+===================================================== */
 
 .form-pengguna-footer {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 12px;
+
   margin-top: 32px;
   padding-top: 22px;
   border-top: 1px solid #edf2ef;
@@ -152,8 +226,10 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+
   min-height: 42px;
   padding: 0 19px;
+
   border-radius: 8px;
   font-family: inherit;
   font-size: 12px;
@@ -164,7 +240,7 @@
 
 .btn-batal-pengguna {
   border: 1px solid #dce7e1;
-  background: #fff;
+  background: #ffffff;
   color: #60746a;
 }
 
@@ -175,7 +251,7 @@
 .btn-simpan-pengguna {
   border: 1px solid #078b45;
   background: #078b45;
-  color: #fff;
+  color: #ffffff;
 }
 
 .btn-simpan-pengguna:hover {
@@ -189,16 +265,26 @@
   cursor: not-allowed;
 }
 
+/* =====================================================
+   LOADING
+===================================================== */
+
 .form-pengguna-loading {
   padding: 50px 20px;
   color: #71857a;
   text-align: center;
   font-size: 14px;
+  line-height: 1.6;
 }
+
+/* =====================================================
+   INFORMATION
+===================================================== */
 
 .form-pengguna-info {
   margin-top: 24px;
   padding: 16px 18px;
+
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 10px;
@@ -215,38 +301,261 @@
   display: inline-block;
   margin: 8px 0;
   padding: 8px 12px;
+
   background: #ffffff;
   border: 1px dashed #93c5fd;
   border-radius: 6px;
   color: #1d4ed8;
+
   font-size: 16px;
   letter-spacing: 0.5px;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 700px) {
+/* =====================================================
+   RESPONSIVE: TABLET BESAR
+===================================================== */
+
+@media (max-width: 1050px) {
+  .form-pengguna {
+    padding: 24px;
+  }
+
+  .form-pengguna-container {
+    padding: 23px;
+  }
+
+  .form-pengguna-grid {
+    gap: 18px 18px;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE: TABLET
+===================================================== */
+
+@media (max-width: 760px) {
   .form-pengguna {
     padding: 18px;
   }
 
   .form-pengguna-header {
-    align-items: flex-start;
-    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .form-pengguna-header h1 {
+    font-size: 22px;
+  }
+
+  .form-pengguna-header p {
+    font-size: 12px;
+  }
+
+  .btn-kembali-pengguna {
+    min-height: 38px;
+    padding: 0 13px;
+    font-size: 12px;
   }
 
   .form-pengguna-container {
     padding: 20px;
+    border-radius: 12px;
+  }
+
+  .form-pengguna-section-header {
+    margin-bottom: 19px;
+  }
+
+  .form-pengguna-grid {
+    gap: 17px;
+  }
+
+  .password-section {
+    margin-top: 27px;
+    padding-top: 22px;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE: MOBILE
+===================================================== */
+
+@media (max-width: 520px) {
+  .form-pengguna {
+    padding: 15px;
+  }
+
+  .form-pengguna-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 13px;
+    margin-bottom: 18px;
+  }
+
+  .form-pengguna-header h1 {
+    font-size: 19px;
+    margin-bottom: 6px;
+  }
+
+  .form-pengguna-header p {
+    font-size: 11px;
+  }
+
+  .btn-kembali-pengguna {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 11px;
+  }
+
+  .form-pengguna-container {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .form-pengguna-section-header {
+    margin-bottom: 17px;
+  }
+
+  .form-pengguna-section-header h2 {
+    font-size: 15px;
+  }
+
+  .form-pengguna-section-header p {
+    font-size: 11px;
   }
 
   .form-pengguna-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .form-pengguna-group {
+    gap: 7px;
+  }
+
+  .form-pengguna-group label {
+    font-size: 11px;
+  }
+
+  .form-pengguna-group input,
+  .form-pengguna-group select {
+    min-height: 40px;
+    padding: 0 11px;
+    font-size: 11px;
+  }
+
+  .password-section {
+    margin-top: 24px;
+    padding-top: 19px;
+  }
+
+  .form-pengguna-error {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    font-size: 11px;
   }
 
   .form-pengguna-footer {
     flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 9px;
+    margin-top: 24px;
+    padding-top: 18px;
   }
 
   .btn-batal-pengguna,
   .btn-simpan-pengguna {
     width: 100%;
+    min-height: 40px;
+    font-size: 11px;
+  }
+
+  .form-pengguna-info {
+    margin-top: 18px;
+    padding: 13px;
+  }
+
+  .form-pengguna-info p {
+    font-size: 11px;
+  }
+
+  .password-default {
+    font-size: 14px;
+  }
+
+  .form-pengguna-loading {
+    padding: 40px 15px;
+    font-size: 12px;
+  }
+}
+
+/* =====================================================
+   RESPONSIVE: MOBILE SANGAT KECIL
+===================================================== */
+
+@media (max-width: 360px) {
+  .form-pengguna {
+    padding: 12px;
+  }
+
+  .form-pengguna-header h1 {
+    font-size: 17px;
+  }
+
+  .form-pengguna-header p {
+    font-size: 10px;
+  }
+
+  .btn-kembali-pengguna {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .form-pengguna-container {
+    padding: 13px;
+  }
+
+  .form-pengguna-section-header h2 {
+    font-size: 14px;
+  }
+
+  .form-pengguna-section-header p {
+    font-size: 10px;
+  }
+
+  .form-pengguna-grid {
+    gap: 14px;
+  }
+
+  .form-pengguna-group label {
+    font-size: 10px;
+  }
+
+  .form-pengguna-group input,
+  .form-pengguna-group select {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .btn-batal-pengguna,
+  .btn-simpan-pengguna {
+    min-height: 38px;
+    font-size: 10px;
+  }
+
+  .form-pengguna-info {
+    padding: 11px;
+  }
+
+  .form-pengguna-info p {
+    font-size: 10px;
+  }
+
+  .password-default {
+    font-size: 12px;
+    padding: 7px 9px;
   }
 }
