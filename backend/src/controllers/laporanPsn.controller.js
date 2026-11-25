@@ -397,8 +397,6 @@ function mapSheetRow(row, headers) {
   };
 }
 
-
-
 function formatPersentaseIndonesia(value) {
   if (value === null || value === undefined || value === "") {
     return "";

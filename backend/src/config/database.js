@@ -9,8 +9,8 @@ const pool = new Pool(
         ssl: {
           rejectUnauthorized: false,
         },
-        max: 10,
-        idleTimeoutMillis: 30000,
+        max: 3,
+        idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
       }
     : {
@@ -21,8 +21,8 @@ const pool = new Pool(
         password: process.env.DB_PASSWORD,
         ssl:
           process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-        max: 10,
-        idleTimeoutMillis: 30000,
+        max: 3,
+        idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 5000,
       },
 );
@@ -35,4 +35,7 @@ async function query(text, params) {
   return pool.query(text, params);
 }
 
-module.exports = { pool, query };
+module.exports = {
+  pool,
+  query,
+};
