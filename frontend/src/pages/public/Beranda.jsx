@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import {
   ArrowRight,
   CalendarDays,
@@ -121,10 +123,7 @@ function Hero() {
         </div>
       </div>
       <div className="hero-image">
-        <img
-          src={fotoHeroSection}
-          alt="Ilustrasi pemeriksaan lingkungan"
-        />
+        <img src={fotoHeroSection} alt="Ilustrasi pemeriksaan lingkungan" />
       </div>
     </section>
   );
@@ -208,108 +207,246 @@ function Stat({ color, label, value, icon }) {
 }
 
 function MapSection() {
-  const [selected, setSelected] = useState("RW 003");
-  const areas = [
-    {
-      id: "RW 003",
-      cls: "area-red",
-      style: { left: "13%", top: "18%", width: "23%", height: "29%" },
-      abj: "90,0%",
-      examined: "90",
-      positive: "9",
-    },
-    {
-      id: "RW 007",
-      cls: "area-yellow",
-      style: { left: "46%", top: "30%", width: "10%", height: "15%" },
-      abj: "94,2%",
-      examined: "105",
-      positive: "6",
-    },
-    {
-      id: "RW 012",
-      cls: "area-green",
-      style: { left: "25%", top: "61%", width: "21%", height: "27%" },
-      abj: "97,1%",
-      examined: "120",
-      positive: "3",
-    },
-    {
-      id: "RW 015",
-      cls: "area-green",
-      style: { left: "70%", top: "28%", width: "10%", height: "16%" },
-      abj: "96,4%",
-      examined: "98",
-      positive: "4",
-    },
-    {
-      id: "RW 018",
-      cls: "area-red",
-      style: { left: "73%", top: "68%", width: "20%", height: "25%" },
-      abj: "88,5%",
-      examined: "110",
-      positive: "13",
-    },
-  ];
-  const current = areas.find((a) => a.id === selected);
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const labelsRef = useRef([]);
+  const [selected, setSelected] = useState(null);
+  const [rwData, setRwData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const geojsonUrl =
+    "https://gis-dpmptsp.jakarta.go.id/arcgis/rest/services/Hosted/ADMINISTRASI_AR_RW/FeatureServer/18/query?where=UPPER(wadmkd)%20LIKE%20%27%25SRENGSENG%20SAWAH%25%27&outFields=*&returnGeometry=true&outSR=4326&f=geojson";
+
+  useEffect(() => {
+    if (!mapRef.current || mapInstance.current) return;
+
+    // INISIALISASI PETA
+    const map = L.map(mapRef.current).setView([-6.35, 106.82], 13);
+
+    mapInstance.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap",
+      maxZoom: 19,
+    }).addTo(map);
+
+    let rwLayer = null;
+    let cancelled = false;
+
+    // MEMUAT GEOJSON
+    async function loadGeoJSON() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(geojsonUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new Error(data.error.message);
+        }
+
+        if (!data.features || data.features.length === 0) {
+          throw new Error("Data batas RW tidak ditemukan.");
+        }
+
+        if (cancelled) return;
+
+        // MEMBUAT LAYER GEOJSON
+        rwLayer = L.geoJSON(data, {
+          style: {
+            color: "#047857",
+            weight: 2,
+            fillColor: "#34d399",
+            fillOpacity: 0.35,
+          },
+
+          onEachFeature: function (feature, layer) {
+            const properties = feature.properties || {};
+
+            const rw =
+              String(properties.wadmrw || "-").replace(/^0+/, "") || "0";
+
+            const kelurahan = properties.wadmkd || "-";
+            const kecamatan = properties.wadmkc || "-";
+
+            // POPUP INFORMASI RW
+            const popupContent = document.createElement("div");
+            popupContent.className = "popup-rw";
+
+            const heading = document.createElement("h3");
+            heading.textContent = `RW ${rw}`;
+
+            const kelurahanText = document.createElement("p");
+            kelurahanText.innerHTML = "<b>Kelurahan:</b> ";
+
+            const kelurahanValue = document.createTextNode(kelurahan);
+            kelurahanText.appendChild(kelurahanValue);
+
+            const kecamatanText = document.createElement("p");
+            kecamatanText.innerHTML = "<b>Kecamatan:</b> ";
+
+            const kecamatanValue = document.createTextNode(kecamatan);
+            kecamatanText.appendChild(kecamatanValue);
+
+            popupContent.appendChild(heading);
+            popupContent.appendChild(kelurahanText);
+            popupContent.appendChild(kecamatanText);
+
+            layer.bindPopup(popupContent);
+
+            // PILIH RW KETIKA POLYGON DIKLIK
+            layer.on("click", function () {
+              setSelected(`RW ${rw}`);
+            });
+
+            // EFEK HOVER
+            layer.on("mouseover", function () {
+              layer.setStyle({
+                color: "#92400e",
+                fillColor: "#facc15",
+                fillOpacity: 0.65,
+                weight: 3,
+              });
+            });
+
+            layer.on("mouseout", function () {
+              rwLayer.resetStyle(layer);
+            });
+          },
+        });
+
+        if (cancelled) {
+          rwLayer.remove();
+          return;
+        }
+
+        rwLayer.addTo(map);
+
+        // MENYESUAIKAN ZOOM PETA
+        if (rwLayer.getBounds().isValid()) {
+          map.fitBounds(rwLayer.getBounds(), {
+            padding: [15, 15],
+          });
+        }
+
+        // MENYIMPAN DATA RW
+        setRwData(data.features);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("GeoJSON Error:", err);
+          setError(err.message || "Gagal memuat data GeoJSON.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadGeoJSON();
+
+    // CLEANUP
+    return () => {
+      cancelled = true;
+
+      map.remove();
+      mapInstance.current = null;
+    };
+  }, []);
+
+  // DATA RW YANG DIPILIH
+  const current = rwData.find((feature) => {
+    const rw =
+      String(feature.properties?.wadmrw || "-").replace(/^0+/, "") || "0";
+
+    return `RW ${rw}` === selected;
+  });
+
+  const properties = current?.properties || {};
+
   return (
     <section className="section" id="peta">
       <SectionTitle
         title="Peta Sebaran Kondisi PSN"
         subtitle="Pantau kondisi wilayah berdasarkan hasil pemeriksaan jentik berkala."
       />
+
       <div className="map-layout">
+        {/* PETA */}
         <div className="map-canvas">
-          <div className="map-road road-one" />
-          <div className="map-road road-two" />
-          <div className="map-road road-three" />
-          <span className="map-label label-a">Jl. Srengseng Sawah</span>
-          <span className="map-label label-b">Universitas Pancasila</span>
-          <span className="map-label label-c">Kawasan Permukiman</span>
-          {areas.map((a) => (
-            <button
-              key={a.id}
-              title={a.id}
-              onClick={() => setSelected(a.id)}
-              className={`map-area ${a.cls} ${selected === a.id ? "chosen" : ""}`}
-              style={a.style}
-            />
-          ))}
-          <div className="map-credit">Peta ilustrasi · Data wilayah contoh</div>
+          <div ref={mapRef} className="leaflet-map" />
+
+          <div className="map-credit">Peta wilayah RW · OpenStreetMap</div>
+
+          {loading && (
+            <div className="map-status">Sedang memuat batas wilayah RW...</div>
+          )}
+
+          {error && (
+            <div className="map-status map-error">
+              Gagal memuat peta: {error}
+            </div>
+          )}
         </div>
+
+        {/* INFORMASI SAMPING */}
         <div className="map-side">
+          {/* LEGENDA */}
           <div className="legend">
             <b>Keterangan</b>
+
             <span>
-              <i className="dot green-dot" /> Kondisi Terkendali
+              <i className="dot green-dot" />
+              Kondisi Terkendali
             </span>
+
             <span>
-              <i className="dot yellow-dot" /> Perlu Pemantauan
+              <i className="dot yellow-dot" />
+              Perlu Pemantauan
             </span>
+
             <span>
-              <i className="dot red-dot" /> Perlu Penanganan
+              <i className="dot red-dot" />
+              Perlu Penanganan
             </span>
           </div>
+
+          {/* DETAIL WILAYAH */}
+
           <div className="area-detail">
             <span className="eyebrow">DETAIL WILAYAH</span>
-            <h3>{current.id}</h3>
+
+            <h3>{selected || "Pilih Wilayah RW"}</h3>
+
             <div className="detail-row">
               <span>Rumah diperiksa</span>
-              <b>{current.examined}</b>
+              <b>{selected === "RW 003" ? "90" : "-"}</b>
             </div>
+
             <div className="detail-row">
               <span>Rumah positif jentik</span>
-              <b>{current.positive}</b>
+              <b>{selected === "RW 003" ? "9" : "-"}</b>
             </div>
+
             <div className="detail-row">
               <span>Angka Bebas Jentik</span>
-              <b>{current.abj}</b>
+              <b>{selected === "RW 003" ? "90,0%" : "-"}</b>
             </div>
+
             <button
               className="btn-primary full"
-              onClick={() =>
-                alert(`Detail ${current.id} masih berupa data prototype.`)
-              }
+              onClick={() => {
+                if (!selected) return;
+                alert(`Detail ${selected}`);
+              }}
+              disabled={!selected}
             >
               Lihat Detail
             </button>
