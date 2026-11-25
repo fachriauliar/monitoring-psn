@@ -372,27 +372,38 @@ async function updateUser(req, res, next) {
     });
   }
 
+  const {
+    nama_lengkap,
+    nip,
+    email,
+    no_hp,
+    jabatan,
+    bagian,
+    pangkat_golongan,
+    role,
+  } = req.body;
+
+  if (!ALLOWED_ROLES.includes(role)) {
+    return res.status(400).json({
+      success: false,
+      message: "Role pengguna tidak valid.",
+    });
+  }
+
+  // Cegah pengguna mengubah role akunnya sendiri.
+  if (
+    Number(req.params.id) === Number(req.user.id_pengguna) &&
+    role !== req.user.role
+  ) {
+    return res.status(400).json({
+      success: false,
+      message: "Anda tidak dapat mengubah role akun sendiri.",
+    });
+  }
+
   const client = await pool.connect();
 
   try {
-    const {
-      nama_lengkap,
-      nip,
-      email,
-      no_hp,
-      jabatan,
-      bagian,
-      pangkat_golongan,
-      role,
-    } = req.body;
-
-    if (!ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({
-        success: false,
-        message: "Role pengguna tidak valid.",
-      });
-    }
-
     await client.query("BEGIN");
 
     const current = await client.query(
@@ -500,28 +511,26 @@ async function updateUserStatus(req, res, next) {
     });
   }
 
+  const { status_akun } = req.body;
+
+  if (!ALLOWED_STATUSES.includes(status_akun)) {
+    return res.status(400).json({
+      success: false,
+      message: "Status akun tidak valid.",
+    });
+  }
+
+  // Cegah pengguna mengubah status akunnya sendiri.
+  if (Number(req.params.id) === Number(req.user.id_pengguna)) {
+    return res.status(400).json({
+      success: false,
+      message: "Anda tidak dapat mengubah status akun sendiri.",
+    });
+  }
+
   const client = await pool.connect();
 
   try {
-    const { status_akun } = req.body;
-
-    if (!ALLOWED_STATUSES.includes(status_akun)) {
-      return res.status(400).json({
-        success: false,
-        message: "Status akun tidak valid.",
-      });
-    }
-
-    if (
-      Number(req.params.id) === Number(req.user.id_pengguna) &&
-      status_akun !== "aktif"
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Anda tidak dapat menonaktifkan akun sendiri.",
-      });
-    }
-
     await client.query("BEGIN");
 
     const current = await client.query(
@@ -543,6 +552,7 @@ async function updateUserStatus(req, res, next) {
 
     const user = current.rows[0];
 
+    // Lindungi Superadmin aktif terakhir.
     if (
       user.role === "superadmin" &&
       user.status_akun === "aktif" &&
@@ -567,8 +577,9 @@ async function updateUserStatus(req, res, next) {
 
     const result = await client.query(
       `UPDATE pengguna
-       SET status_akun = $1,
-           updated_at = NOW()
+       SET
+         status_akun = $1,
+         updated_at = NOW()
        WHERE id_pengguna = $2
        RETURNING ${publicColumns()}`,
       [status_akun, req.params.id],
@@ -676,16 +687,17 @@ async function deleteUser(req, res, next) {
     });
   }
 
+  // Cegah pengguna menghapus akunnya sendiri.
+  if (Number(req.params.id) === Number(req.user.id_pengguna)) {
+    return res.status(400).json({
+      success: false,
+      message: "Anda tidak dapat menghapus akun sendiri.",
+    });
+  }
+
   const client = await pool.connect();
 
   try {
-    if (Number(req.params.id) === Number(req.user.id_pengguna)) {
-      return res.status(400).json({
-        success: false,
-        message: "Anda tidak dapat menghapus akun sendiri.",
-      });
-    }
-
     await client.query("BEGIN");
 
     const target = await client.query(
@@ -707,6 +719,7 @@ async function deleteUser(req, res, next) {
 
     const user = target.rows[0];
 
+    // Lindungi Superadmin aktif terakhir.
     if (user.role === "superadmin" && user.status_akun === "aktif") {
       const count = await client.query(
         `SELECT COUNT(*)::int AS total
@@ -740,7 +753,6 @@ async function deleteUser(req, res, next) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-
     next(error);
   } finally {
     client.release();
