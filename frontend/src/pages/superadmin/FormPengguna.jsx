@@ -28,6 +28,7 @@ function FormPengguna() {
 
   const isEdit = Boolean(id);
   const token = localStorage.getItem("token");
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 
   const [formData, setFormData] = useState(initialFormData);
   const [loading, setLoading] = useState(false);
@@ -118,6 +119,18 @@ function FormPengguna() {
 
     if (!formData.email.trim()) {
       setErrorMessage("Email wajib diisi.");
+      return;
+    }
+
+    // Cegah pengguna mengubah role akun sendiri.
+    const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+    if (
+      isEdit &&
+      Number(id) === Number(currentUser.id_pengguna) &&
+      formData.role !== currentUser.role
+    ) {
+      setErrorMessage("Anda tidak dapat mengubah role akun sendiri.");
       return;
     }
 
@@ -359,7 +372,7 @@ function FormPengguna() {
             </p>
           </div>
         )}
-        
+
         <div className="form-pengguna-footer">
           <button
             type="button"

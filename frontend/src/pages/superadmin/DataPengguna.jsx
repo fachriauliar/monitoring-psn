@@ -194,6 +194,12 @@ function DataPengguna() {
 
   // Mengubah status akun
   async function handleStatusChange(user) {
+    if (Number(user.id_pengguna) === Number(currentUser.id_pengguna)) {
+      setError("Anda tidak dapat mengubah status akun sendiri.");
+      setNotice("");
+      return;
+    }
+    
     const newStatus = user.status_akun === "aktif" ? "nonaktif" : "aktif";
 
     const confirmed = window.confirm(
@@ -301,6 +307,12 @@ function DataPengguna() {
 
   // Menghapus akun pengguna
   async function handleDelete(user) {
+    if (Number(user.id_pengguna) === Number(currentUser.id_pengguna)) {
+      setError("Anda tidak dapat menghapus akun sendiri.");
+      setNotice("");
+      return;
+    }
+
     const confirmed = window.confirm(
       `Apakah Anda yakin ingin menghapus akun ${user.nama_lengkap}? Tindakan ini tidak dapat dibatalkan.`,
     );
@@ -579,7 +591,9 @@ function DataPengguna() {
                           title="Edit pengguna"
                           disabled={processingId === user.id_pengguna}
                           onClick={() =>
-                            navigate(`/superadmin/pengguna/${user.id_pengguna}/edit`)
+                            navigate(
+                              `/superadmin/pengguna/${user.id_pengguna}/edit`,
+                            )
                           }
                         >
                           <Pencil size={16} />

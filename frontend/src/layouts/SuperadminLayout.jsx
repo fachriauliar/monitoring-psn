@@ -88,7 +88,7 @@ export default function SuperadminLayout() {
   const handleLogout = () => {
     closeSidebar();
     logout();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   };
 
   // Menutup sidebar dengan tombol Escape.
