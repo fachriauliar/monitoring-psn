@@ -83,8 +83,12 @@ export default function AdminLayout() {
 
   const handleLogout = () => {
     setSidebarOpen(false);
+
     logout();
-    navigate("/", { replace: true });
+
+    setTimeout(() => {
+      navigate("/", { replace: true });
+    }, 0);
   };
 
   const closeSidebar = () => {

@@ -86,9 +86,13 @@ export default function SuperadminLayout() {
   };
 
   const handleLogout = () => {
-    closeSidebar();
+    setSidebarOpen(false);
+
     logout();
-    navigate("/", { replace: true });
+
+    setTimeout(() => {
+      navigate("/", { replace: true });
+    }, 0);
   };
 
   // Menutup sidebar dengan tombol Escape.

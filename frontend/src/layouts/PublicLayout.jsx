@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { MapPin, Phone, Mail, Menu, X } from "lucide-react";
 
@@ -24,6 +23,7 @@ const publicMenus = [
 ];
 
 export default function PublicLayout() {
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const closeMenu = () => setMenuOpen(false);
@@ -50,7 +50,7 @@ export default function PublicLayout() {
 
   useEffect(() => {
     closeMenu();
-  }, [window.location.pathname]);
+  }, [location.pathname]);
 
   return (
     <div className="public-layout">
@@ -67,21 +67,13 @@ export default function PublicLayout() {
 
           <nav className="public-nav" aria-label="Navigasi utama">
             {publicMenus.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === "/"}
-              >
+              <NavLink key={item.path} to={item.path} end={item.path === "/"}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
 
-          <Link
-            to="/login"
-            className="public-login-button"
-            onClick={closeMenu}
-          >
+          <Link to="/login" className="public-login-button" onClick={closeMenu}>
             Masuk
           </Link>
 
@@ -123,11 +115,7 @@ export default function PublicLayout() {
             </NavLink>
           ))}
 
-          <Link
-            to="/login"
-            className="mobile-login-link"
-            onClick={closeMenu}
-          >
+          <Link to="/login" className="mobile-login-link" onClick={closeMenu}>
             Masuk ke Dashboard
           </Link>
         </nav>
@@ -183,9 +171,7 @@ export default function PublicLayout() {
 
             <div className="contact-item">
               <Mail size={15} />
-              <a href="mailto:email@kelurahan.go.id">
-                email@kelurahan.go.id
-              </a>
+              <a href="mailto:email@kelurahan.go.id">email@kelurahan.go.id</a>
             </div>
           </div>
 
