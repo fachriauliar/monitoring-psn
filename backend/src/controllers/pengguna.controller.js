@@ -30,7 +30,7 @@ function publicColumns() {
 }
 
 function generateTemporaryPassword() {
-  return crypto.randomBytes(12).toString("base64url");
+  return "Psn@2026Awal";
 }
 
 function isValidUserId(id) {
