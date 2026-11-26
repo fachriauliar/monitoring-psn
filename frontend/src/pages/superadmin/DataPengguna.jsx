@@ -383,7 +383,6 @@ function DataPengguna() {
     const labels = {
       aktif: "Aktif",
       nonaktif: "Nonaktif",
-      diblokir: "Diblokir",
     };
 
     return labels[status] || status;
@@ -526,7 +525,6 @@ function DataPengguna() {
             <option value="">Semua Status</option>
             <option value="aktif">Aktif</option>
             <option value="nonaktif">Nonaktif</option>
-            <option value="diblokir">Diblokir</option>
           </select>
         </div>
 

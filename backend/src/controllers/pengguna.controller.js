@@ -7,7 +7,7 @@ const { query, pool } = require("../config/database");
 // =========================================================
 
 const ALLOWED_ROLES = ["admin", "superadmin"];
-const ALLOWED_STATUSES = ["aktif", "nonaktif", "diblokir"];
+const ALLOWED_STATUSES = ["aktif", "nonaktif"];
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 
@@ -209,10 +209,6 @@ async function getUserStatistics(req, res, next) {
         COUNT(*) FILTER (
           WHERE status_akun = 'nonaktif'
         )::int AS total_nonaktif,
-
-        COUNT(*) FILTER (
-          WHERE status_akun = 'diblokir'
-        )::int AS total_diblokir
 
        FROM pengguna`,
     );
