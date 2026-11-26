@@ -36,6 +36,15 @@ function getErrorMessage(message, fallback) {
 function DataPengguna() {
   const navigate = useNavigate();
 
+  // Data pengguna yang sedang login
+  const [currentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || null;
+    } catch {
+      return null;
+    }
+  });
+
   // Data pengguna
   const [userList, setUserList] = useState([]);
 
@@ -195,11 +204,11 @@ function DataPengguna() {
   // Mengubah status akun
   async function handleStatusChange(user) {
     if (Number(user.id_pengguna) === Number(currentUser.id_pengguna)) {
-      setError("Anda tidak dapat mengubah status akun sendiri.");
+      setError("Anda tidak dapat mengubah status akun Anda sendiri.");
       setNotice("");
       return;
     }
-    
+
     const newStatus = user.status_akun === "aktif" ? "nonaktif" : "aktif";
 
     const confirmed = window.confirm(
@@ -308,7 +317,7 @@ function DataPengguna() {
   // Menghapus akun pengguna
   async function handleDelete(user) {
     if (Number(user.id_pengguna) === Number(currentUser.id_pengguna)) {
-      setError("Anda tidak dapat menghapus akun sendiri.");
+      setError("Anda tidak dapat menghapus akun Anda sendiri.");
       setNotice("");
       return;
     }

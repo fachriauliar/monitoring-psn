@@ -296,6 +296,32 @@
   cursor: pointer;
 }
 
+/* Notifikasi error */
+.pengguna-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding: 10px 12px;
+  margin-bottom: 14px;
+
+  border-radius: 7px;
+  background: #fde8e8;
+  color: #d93025;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pengguna-error button {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: #d93025;
+  font-size: 19px;
+  cursor: pointer;
+}
+
 /* =====================================================
    TABLE
 ===================================================== */
