@@ -11,6 +11,7 @@ const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+
   message: {
     success: false,
     message: "Terlalu banyak percobaan login. Coba lagi beberapa saat.",
