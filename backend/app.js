@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -17,6 +16,9 @@ const { notFound, errorHandler } = require("./src/middlewares/errorHandler");
 
 const app = express();
 
+// Trust proxy untuk deployment Vercel
+app.set("trust proxy", 1);
+
 app.disable("x-powered-by");
 
 app.use(helmet());
@@ -27,7 +29,7 @@ app.use(
       .split(",")
       .map((item) => item.trim()),
     credentials: false,
-  })
+  }),
 );
 
 app.use(express.json({ limit: "1mb" }));
